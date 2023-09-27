@@ -216,7 +216,7 @@ calc.pack()
 root.mainloop()
 ```
 
-<img src="https://github.com/RandyGraham/Python-TKML/Images/CalculatorScreenshot.PNG" alt="Logo">
+<img src="Images/CalculatorScreenshot.PNG" alt="Logo">
 
 
 ## TKML usage
