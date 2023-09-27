@@ -195,7 +195,7 @@ calc.pack()
 root.mainloop()
 ```
 
-<img src="Images/CalculatorScreenshot.png" alt="Logo">
+<img src="Images/CalculatorScreenshot.PNG" alt="Logo">
 
 
 ## TKML usage
