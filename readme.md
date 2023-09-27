@@ -269,6 +269,12 @@ anyWidget3 = AnyWidget(frame)
 anyWidget3.grid(row=1, column=4)
 longWidget = LongWidget(frame)
 longWidget.grid(row=2, column=0, columnspan=5, sticky="ew")
+# from rowweight="1"
+for row in range(0, 3):
+  frame.grid_rowconfigure(row, weight=1)
+# from columnweight="1"
+for col in range(0, 5):
+  frame.grid_columnconfigure(col, weight=1)
 frame.pack(expand=1, fill="both")
 # Big  Big
 # Big  Big  Any1 Any2 Any3
