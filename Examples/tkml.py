@@ -205,6 +205,7 @@ terminal = {
     "Entry": ttk.Entry,
     "Table": TKMLTreeView,
     "OptionMenu": ttk.OptionMenu,
+    "Text": tk.Text
 }
 commands = {
     "RowConfigure",

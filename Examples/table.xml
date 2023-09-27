@@ -1,0 +1,12 @@
+<Frame>
+    <!-->If no layout is specified it defaults to "V"ertical<-->
+    <Table id="example_table" columns="name, calories, rating" show="headings">
+        <Heading text="Food Name">name</Heading>
+        <Heading text="Calorie Count">calories</Heading>
+        <Heading text="Rating">rating</Heading>
+    </Table>
+    <Button text="Add Random Food" command="add_random" />
+    <Button text="Select All" command="select_all" />
+    <Button text="Remove Selected" command="remove_selected" />
+    <Button text="Check Out" command="checkout" />
+</Frame>

@@ -1,0 +1,9 @@
+<!-->We use the frame here because the parent is already a toplevel.<-->
+<Frame layout="H">
+    <!-->Use
+    GetVar to get a tk Var from the python class<-->
+    <GetVar python="food_count" id="count" />
+    <Label text="You Ordered" />
+    <Label textvariable="count" inline_style="font=Arial, 18;" />
+    <Label text="Items" />
+</Frame>
