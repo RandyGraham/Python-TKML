@@ -77,8 +77,6 @@ Benefits:
 * Quality of Life Improvements - Grid layouts automatically assign column and row values depending on their position -- Even when widgets have different rowspans and column spans! You can pass a widget's pack() and grid() keywords to them when you initialize them. Widgets now pack with expand="1" fill="both" by default.
 * Zero Dependancies - Just drag and drop this file. It doesn't use anything outside of the standard library
 
-Use the `BLANK_README.md` to get started.
-
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 
@@ -230,7 +228,7 @@ TKML works by passing the xml keywords to the tkinter widgets after converting t
 
 TKML adds some more features. All Frames are set to expand=1 and fill="both" by default. Grid automatically handles row and column even with compilicated layouts using rowspan and columnspan. Support for inline_styles.
 
-_For more examples, please refer to the [Examples](https://www.github.com/RandyGraham/Examples)_
+_For more examples, please refer to the [Examples](https://www.github.com/RandyGraham/Python-TKML/Examples)_
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
