@@ -30,7 +30,7 @@
   <p align="center">
     Seperate your layouting logic from your program logic.
     <br />
-    <a href="https://github.com/RandyGraham/Python-TMKL/Examples"><strong>Examples »</strong></a>
+    <a href="https://github.com/RandyGraham/Python-TKML/tree/main/Examples"><strong>Examples »</strong></a>
     <br />
 
 </div>
@@ -228,7 +228,7 @@ TKML works by passing the xml keywords to the tkinter widgets after converting t
 
 TKML adds some more features. All Frames are set to expand=1 and fill="both" by default. Grid automatically handles row and column even with compilicated layouts using rowspan and columnspan. Support for inline_styles.
 
-_For more examples, please refer to the [Examples](https://www.github.com/RandyGraham/Python-TKML/Examples)_
+_For more examples, please refer to the [Examples](https://github.com/RandyGraham/Python-TKML/tree/main/Examples)_
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
