@@ -1,0 +1,43 @@
+<Frame layout="V">
+    <Geometry>200x180</Geometry>
+    <Style font="Arial, 18">TButton</Style>
+    <Label text="Calculator Example" />
+    <Frame layout="V" inline_style="background=white;">
+        <String id="buffer" />
+        <Label textvariable="buffer" inline_style="background=white;" />
+    </Frame>
+    <Frame layout="Grid">
+        <RowConfigure weight="1">0</RowConfigure>
+        <RowConfigure weight="1">1</RowConfigure>
+        <RowConfigure weight="1">2</RowConfigure>
+        <RowConfigure weight="1">3</RowConfigure>
+        <ColumnConfigure weight="1">0</ColumnConfigure>
+        <ColumnConfigure weight="1">1</ColumnConfigure>
+        <ColumnConfigure weight="1">2</ColumnConfigure>
+        <ColumnConfigure weight="1">3</ColumnConfigure>
+        <Row>
+            <Button text="1" command="enter_1" />
+            <Button text="2" command="enter_2" />
+            <Button text="3" command="enter_3" />
+            <Button text="+" command="enter_add" />
+        </Row>
+        <Row>
+            <Button text="4" command="enter_4" />
+            <Button text="5" command="enter_5" />
+            <Button text="6" command="enter_6" />
+            <Button text="-" command="enter_sub" />
+        </Row>
+        <Row>
+            <Button text="7" command="enter_7" />
+            <Button text="8" command="enter_8" />
+            <Button text="9" command="enter_9" />
+            <Button text="*" command="enter_mul" />
+        </Row>
+        <Row>
+            <Button text="CLS" command="clear" />
+            <Button text="0" command="enter_0" />
+            <Button text="=" command="equals" />
+            <Button text="/" command="enter_div" />
+        </Row>
+    </Frame>
+</Frame>
