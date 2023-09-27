@@ -162,7 +162,6 @@ from tkml import TKMLWidget
 class Calculator(TKMLWidget):
     def __init__(self, parent):
         super().__init__(parent)
-        self.paren_state = tk.StringVar(value="(")
         self.load_store_var = None
 
     def enter(self, value):
