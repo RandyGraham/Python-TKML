@@ -29,8 +29,8 @@
 <!-- PROJECT LOGO -->
 <br />
 <div align="center">
-  <a href="https://github.com/RandyGraham/Python-TMKL">
-    <img src="images/PythonTKML.png" alt="Logo">
+  <a href="https://github.com/RandyGraham/Python-TMKL/">
+    <img src="Images/PythonTKML.png" alt="Logo">
   </a>
 
   <h3 align="center">Single File Layouting using XML for Tkinter</h3>
