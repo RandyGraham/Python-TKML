@@ -217,29 +217,138 @@ root.mainloop()
 
 
 ## TKML usage
-TKML works by passing the xml keywords to the tkinter widgets after converting them to usable values.
-| XML Keyword | Converted Value | Example |
-| ----------- | --------------- | ------- |
-| command     | lambda: getattr(master, command)() | command="add_one"
-| columns     | list | columns="id, name, stock, unit"
-| id          | master._tkml_variables[id] = current_widget | id="my_string_var"
-| textvariable | master._tkml_variables[textvariable] | textvariable="my_string_var"
-| * | if attribute is all numbers then convert attribute to int | width="100" becomes width=100
+#### XML Attribute Conversion
+Python-TKML converts a tag's keywords into usable values before passing to the widget.
+| XML Keyword  | Conversion                               | Example |
+| ------------ | ---------------------------------------- | ------- |
+| command      | ```callable(getattr(master, command)) ```| ```command="add_one"```
+| columns      | list                                     | ```columns="id, name, stock, unit"```
+| id           | ```master._tkml_variables[id] = current_widget``` | ```id="my_string_var"```
+| textvariable | ```master._tkml_variables[textvariable]```   | ```textvariable="my_string_var"```
+| * | if attribute is all numbers then convert attribute to int | ```width="100" becomes width=100```
 
-TKML adds some more features. All Frames are set to expand=1 and fill="both" by default. Grid automatically handles row and column even with compilicated layouts using rowspan and columnspan. Support for inline_styles.
+#### Layouts
+##### Grid
+``` xml
+<!-->
+rowweight and columnweight are optional: 
+when provided a call to parent.grid_rowconfigure
+or parent.grid_columnconfigure will be called 
+for each row or column managed by the frame. This 
+is used to easily make the grid resizable
+<-->
+<Frame layout="grid" rowweight="1" columnweight="1">
+    <!-->Any number of commands can be placed; they won't affect the layout<-->
+    <Row>
+        <!-->
+        Things which would usually be passed to .grid() in 
+        python are declared when you initialize the widget
+        <-->
+        <BigWidget columnspan="2" rowspan="2" sticky="nsew"/>
+    </Row>
+    <Row>
+        <AnyWidget />
+        <AnyWidget />
+        <AnyWidget />
+    </Row>
+    <Row>
+        <LongWidget columnspan="4" sticky="ew"/>
+    </Row>
+</Frame>
+```
+Python Equivalent
+```python
+frame = ttk.Frame(root)
+bigWidget = BigWidget(frame)
+bigWidget.grid(row=0, column=0, columnspan=2, rowspan=2, sticky="nsew")
+anyWidget1 = AnyWidget(frame)
+anyWidget1.grid(row=1, column=2)
+anyWidget2 = AnyWidget(frame)
+anyWidget2.grid(row=1, column=3)
+anyWidget3 = AnyWidget(frame)
+anyWidget3.grid(row=1, column=4)
+longWidget = LongWidget(frame)
+longWidget.grid(row=2, column=0, columnspan=5, sticky="ew")
+frame.pack(expand=1, fill="both")
+# Big  Big
+# Big  Big  Any1 Any2 Any3
+# Long Long Long Long Long
+```
 
+##### Vertical and Horizontal
+Vertical
+```xml
+<Frame layout="V">
+    <AnyWidget fill="x">
+    <AnyWidget expand="0">
+</Frame>
+```
+```python
+frame = ttk.Frame(root)
+any1 = AnyWidget(frame)
+# by default widgets are packed using fill="both" expand="1"
+any1.pack(fill="x", expand="1")
+any2 = AnyWidget(frame)
+any2.pack(fill="both", expand="0")
+frame.pack(expand="1", fill="both")
+```
+Horizontal
+```xml
+<Frame layout="H" fill="y">
+    <AnyWidget fill="x">
+    <AnyWidget expand="0">
+</Frame>
+```
+```python
+frame = ttk.Frame(root)
+any1 = AnyWidget(frame)
+any1.pack(fill="x", expand="1")
+any2 = AnyWidget(frame)
+any2.pack(fill="both", expand="0")
+frame.pack(expand="1", fill="y")
+```
+#### Special Widgets
+##### Optionmenu
+```xml
+<String id="my_optionmenu">
+<!-->options and textvariable are required<-->
+<OptionMenu options="a, b, c, d, e, f" textvariable="my_optionmenu">
+```
+```python
+#Equivalent
+options = ["a", "b", "c", "d", "e", "f"]
+my_optionmenu = tk.StringVar(value=options[0])
+optionmenu = ttk.OptionMenu(parent, my_optionmenu, options[0], *options)
+```
+##### Table
+```xml
+<Table columns="id, name, price" show="heading">
+    <Heading text="ID">id</Heading>
+    <Heading text="Item Name">name</Heading>
+    <Heading text="Price $" sort_by="num">price</Heading>
+    <Column weight="1" width="80">id</Column>
+</Table>
+```
+```python
+#Equivalent
+parent = ttk.Frame(root)
+table = SortableTreeview(parent, columns=("id", "name", "price", show="heading"))
+table.heading("id", text="ID")
+table.heading("name", text="Item Name")
+table.heading("price", text="Price $")
+table.column("id", weight=1, width=80)
+#Horizontal and Vertical Scrollbars are added automatically
+v_scrollbar = ttk.Scrollbar(table, orient="vertical", command=table.yview)
+h_scrollbar = ttk.Scrollbar(table, orient="horizontal", command=table.xview)
+table.configure(yscrollcommand=v_scrollbar.set, xscrollcommand=h_scrollbar.set)
+v_scrollbar.pack(side="right", fill="y")
+table.pack(expand=1, fill="both")
+h_scrollbar.pack(fill="x")
+parent.pack()
+```
 _For more examples, please refer to the [Examples](https://github.com/RandyGraham/Python-TKML/tree/main/Examples)_
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
-
-
-
-<!-- ROADMAP -->
-## Roadmap
-
-- [x] Add Most Widgets
-- [ ] Add All Widgets
-
 
 
 <!-- CONTRIBUTING -->
@@ -272,9 +381,7 @@ Distributed under the MIT License. See `LICENSE.txt` for more information.
 
 <!-- ACKNOWLEDGMENTS -->
 ## Acknowledgments
-People's who's code I copy pasted
 
-* [Remi Hassan](https://stackoverflow.com/users/6424190/rami-hassan)
-
+* SortedTreeview from [Remi Hassan](https://stackoverflow.com/users/6424190/rami-hassan)
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>

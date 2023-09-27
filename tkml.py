@@ -205,7 +205,8 @@ terminal = {
     "Entry": ttk.Entry,
     "Table": TKMLTreeView,
     "OptionMenu": ttk.OptionMenu,
-    "Text": tk.Text
+    "Text": tk.Text,
+    "Checkbutton": ttk.Checkbutton
 }
 commands = {
     "RowConfigure",
@@ -227,6 +228,8 @@ item_classes = {
     "Entry": "TEntry",
     "Frame": "TFrame",
     "LabelFrame": "TLabelFrame",
+    "Checkbutton": "TCheckbutton",
+    "Notebook": "TNotebook"
 }
 
 class TKMLRuntimeError(Exception): pass
