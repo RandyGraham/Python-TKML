@@ -237,7 +237,7 @@ def _make_call(master: TKMLWidget, function_name: str) -> callable:
         if not callable(func):
             raise TKMLRuntimeError(f"Attempted to call undefined function [{function_name}]. Make sure that function is defined by the master widget.")
         func()
-    return lambda: _call()
+    return _call
 
 
 def _lookup(master: TKMLWidget, id_: int):
