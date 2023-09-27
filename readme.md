@@ -90,7 +90,7 @@ None. TKML doesn't use anything outside of the standard library. Linux users may
 
 ### Installation
 
-Drag this file into your project directory.
+Drag tkml.py into your project directory.
 
 ```python
 from tkml import TKMLWidget
