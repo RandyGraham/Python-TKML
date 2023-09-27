@@ -13,7 +13,7 @@ A Single-File Library for Using XML to layout TKinter
 Authored by Randy Graham Jr.
 """
 
-DEBUG = True
+DEBUG = False
 
 if DEBUG:
     dprint = print
@@ -229,9 +229,15 @@ item_classes = {
     "LabelFrame": "TLabelFrame",
 }
 
+class TKMLRuntimeError(Exception): pass
 
 def _make_call(master: TKMLWidget, function_name: str) -> callable:
-    return lambda: getattr(master, function_name)()
+    def _call():
+        func = getattr(master, function_name)
+        if not callable(func):
+            raise TKMLRuntimeError(f"Attempted to call undefined function [{function_name}]. Make sure that function is defined by the master widget.")
+        func()
+    return lambda: _call()
 
 
 def _lookup(master: TKMLWidget, id_: int):
@@ -248,21 +254,27 @@ def _pull_layout_params(node: xmlET.Element):
     if "rowspan" in node.attrib:
         layout_params["rowspan"] = int(node.attrib["rowspan"])
         node.attrib.pop("rowspan")
+
     if "columnspan" in node.attrib:
         layout_params["columnspan"] = int(node.attrib["columnspan"])
         node.attrib.pop("columnspan")
+
     if "side" in node.attrib:
         layout_params["side"] = node.attrib["side"]
         node.attrib.pop("side")
+
     if "sticky" in node.attrib:
         layout_params["sticky"] = node.attrib["sticky"]
         node.attrib.pop("sticky")
+
     if "fill" in node.attrib:
         layout_params["fill"] = node.attrib["fill"]
         node.attrib.pop("fill")
+
     if "expand" in node.attrib:
         layout_params["expand"] = node.attrib["expand"]
         node.attrib.pop("expand")
+
     return layout_params
 
 
@@ -366,6 +378,12 @@ def handle_branching(
     if "id" in node.attrib:
         id_ = node.attrib["id"]
         node.attrib.pop("id")
+    
+    rowweight = columnweight = None
+    if "rowweight" in node.attrib:
+        rowweight = node.attrib.pop("rowweight")
+    if "columnweight" in node.attrib:
+        columnweight = node.attrib.pop("columnweight")
 
     widget = branching[node.tag](parent, **node.attrib)
 
@@ -375,6 +393,8 @@ def handle_branching(
 
     if layout_type == "Grid":
         dprint("LAYOUT TYPE: Grid")
+        row_max = 0
+        column_max = 0
         occupied = {}
         row_index = 0
         for row in node:
@@ -388,6 +408,7 @@ def handle_branching(
                 # Pass over cells until an unoccupied one is found
                 while (column_index, row_index) in occupied:
                     column_index += 1
+
                 layout_attributes = _pull_layout_params(child)
                 dprint(f"ROW: {row_index}, COLUMN: {column_index}")
                 child_widget = handle_any(master, child, widget)
@@ -403,6 +424,8 @@ def handle_branching(
                 child_widget.grid(
                     row=row_index, column=column_index, **layout_attributes
                 )
+                column_max = max(column_max, column_index)
+                row_max = max(row_max, row_index)
 
                 # Set all grid cells as occupied
                 rowspan = (
@@ -423,15 +446,21 @@ def handle_branching(
 
             row_index += 1
 
+        if rowweight is not None:
+            for r in range(0, row_max+1):
+                widget.grid_rowconfigure(r, weight=rowweight)
+        if columnweight is not None:
+            for c in range(0, column_max+1):
+                widget.grid_columnconfigure(c, weight=columnweight)
         return widget
     
     if layout_type == "H":
         # Horizontal
         for index, child in enumerate(node):
             layout_attributes = {"expand": 1, "fill": "both"}
-            layout_attributes.update(_pull_layout_params(child))
 
             child_widget = handle_any(master, child, widget)
+            layout_attributes.update(_pull_layout_params(child))
             if child_widget is None or child.tag == "Toplevel":
                 continue
             child_widget.pack(side="left", **layout_attributes)
@@ -441,9 +470,10 @@ def handle_branching(
         # Vertical
         for index, child in enumerate(node):
             layout_attributes = {"expand": 1, "fill": "both"}
-            layout_attributes.update(_pull_layout_params(child))
 
             child_widget = handle_any(master, child, widget)
+            layout_attributes.update(_pull_layout_params(child))
+            
             if child_widget is None or child.tag == "Toplevel":
                 continue
             child_widget.pack(**layout_attributes)
@@ -476,11 +506,12 @@ def handle_command(master: TKMLWidget, node: xmlET.Element, parent: tk.Widget) -
         master.bind(node.text, **node.attrib)
 
     elif node.tag == "String":
-        master._tkml_variables[node.attrib["id"]] = tk.StringVar()
-        return None
+        id_ = node.attrib.pop("id")
+        master._tkml_variables[id_] = tk.StringVar(**node.attrib)
 
     elif node.tag == "Int":
-        master._tkml_variables[node.attrib["id"]] = tk.IntVar()
+        id_ = node.attrib.pop("id")
+        master._tkml_variables[id_] = tk.IntVar(**node.attrib)
 
     elif node.tag == "Style":
         ttk.Style().configure(node.text, **node.attrib)
@@ -491,7 +522,7 @@ def handle_command(master: TKMLWidget, node: xmlET.Element, parent: tk.Widget) -
         master._tkml_variables[id_] = tk.PhotoImage(**node.attrib)
 
     elif node.tag == "Title":
-        master.title(node.text)
+        master.winfo_toplevel().title(node.text)
 
     elif node.tag == "GetVar":
         python_name = node.attrib["python"]

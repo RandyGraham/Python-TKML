@@ -5,6 +5,8 @@ from tkml import TKMLWidget
 class Calculator(TKMLWidget):
     def __init__(self, parent):
         super().__init__(parent)
+        self.paren_state = tk.StringVar(value="(")
+        self.load_store_var = None
 
     def enter(self, value):
         self["buffer"].set(self["buffer"].get() + value)
@@ -26,8 +28,25 @@ class Calculator(TKMLWidget):
     def enter_sub(self):
         self.enter("-")
 
+    def enter_dot(self):
+        self.enter(".")
+
+    def enter_paren(self):
+        self.enter(self["paren"].get())
+        self["paren"].set("(" if self["paren"].get() == ")" else ")")
+
+    def load(self):
+        if self.load_store_var is not None:
+            self.enter(self.load_store_var)
+    
+    def store(self):
+        self.load_store_var = self["buffer"].get()
+
     def equals(self):
-        self["buffer"].set(eval(self["buffer"].get()))
+        try:
+            self["buffer"].set(eval(self["buffer"].get()))
+        except Exception as e:
+            self["buffer"].set("Error")
 
     def clear(self):
         self["buffer"].set("")

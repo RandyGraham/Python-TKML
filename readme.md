@@ -108,27 +108,24 @@ from tkml import TKMLWidget
 ```xml
 <!-->Save this file as "calculator.xml"<-->
 <Frame layout="V">
-    <Geometry>200x180</Geometry>
+    <Geometry>210x250</Geometry>
+    <Title>Python-TKML Rocks!</Title>
     <Style font="Arial, 18">TButton</Style>
     <Label text="Calculator Example" />
     <Frame layout="V" inline_style="background=white;">
         <String id="buffer" />
-        <Label textvariable="buffer" inline_style="background=white;" />
+        <Label textvariable="buffer" inline_style="background=white; font=Arial, 20;" />
     </Frame>
-    <Frame layout="Grid">
-        <RowConfigure weight="1">0</RowConfigure>
-        <RowConfigure weight="1">1</RowConfigure>
-        <RowConfigure weight="1">2</RowConfigure>
-        <RowConfigure weight="1">3</RowConfigure>
-        <ColumnConfigure weight="1">0</ColumnConfigure>
-        <ColumnConfigure weight="1">1</ColumnConfigure>
-        <ColumnConfigure weight="1">2</ColumnConfigure>
-        <ColumnConfigure weight="1">3</ColumnConfigure>
+    <Frame layout="Grid" rowweight="1" columnweight="1">
+        <Row>
+            <Button text="CLS" command="clear" columnspan="3" sticky="nsew" />
+            <Button text="/" command="enter_div" />
+        </Row>
         <Row>
             <Button text="1" command="enter_1" />
             <Button text="2" command="enter_2" />
             <Button text="3" command="enter_3" />
-            <Button text="+" command="enter_add" />
+            <Button text="*" command="enter_mul" />
         </Row>
         <Row>
             <Button text="4" command="enter_4" />
@@ -140,18 +137,23 @@ from tkml import TKMLWidget
             <Button text="7" command="enter_7" />
             <Button text="8" command="enter_8" />
             <Button text="9" command="enter_9" />
-            <Button text="*" command="enter_mul" />
+            <Button text="+" command="enter_add" />
         </Row>
         <Row>
-            <Button text="CLS" command="clear" />
-            <Button text="0" command="enter_0" />
-            <Button text="=" command="equals" />
-            <Button text="/" command="enter_div" />
+            <Button text="0" command="enter_0" columnspan="2" sticky="nsew" />
+            <Button text="." command="enter_dot" />
+            <Button text="=" command="equals" rowspan="2" sticky="nsew" />
+        </Row>
+        <Row>
+            <String id="paren" value="(" />
+            <Button textvariable="paren" command="enter_paren" />
+            <Button text="RCL" command="load" />
+            <Button text="STR" command="store" />
         </Row>
     </Frame>
 </Frame>
 ```
-### Example Simple Calculator Python
+### Example Calculator Python
 ```python
 import tkinter as tk
 from tkml import TKMLWidget
@@ -160,6 +162,8 @@ from tkml import TKMLWidget
 class Calculator(TKMLWidget):
     def __init__(self, parent):
         super().__init__(parent)
+        self.paren_state = tk.StringVar(value="(")
+        self.load_store_var = None
 
     def enter(self, value):
         self["buffer"].set(self["buffer"].get() + value)
@@ -181,8 +185,25 @@ class Calculator(TKMLWidget):
     def enter_sub(self):
         self.enter("-")
 
+    def enter_dot(self):
+        self.enter(".")
+
+    def enter_paren(self):
+        self.enter(self["paren"].get())
+        self["paren"].set("(" if self["paren"].get() == ")" else ")")
+
+    def load(self):
+        if self.load_store_var is not None:
+            self.enter(self.load_store_var)
+    
+    def store(self):
+        self.load_store_var = self["buffer"].get()
+
     def equals(self):
-        self["buffer"].set(eval(self["buffer"].get()))
+        try:
+            self["buffer"].set(eval(self["buffer"].get()))
+        except Exception as e:
+            self["buffer"].set("Error")
 
     def clear(self):
         self["buffer"].set("")
@@ -195,7 +216,7 @@ calc.pack()
 root.mainloop()
 ```
 
-<img src="Images/CalculatorScreenshot.PNG" alt="Logo">
+<img src="https://github.com/RandyGraham/Python-TKML/Images/CalculatorScreenshot.PNG" alt="Logo">
 
 
 ## TKML usage
@@ -245,7 +266,7 @@ Don't forget to give the project a star! Thanks again!
 <!-- LICENSE -->
 ## License
 
-Distributed under the Unlicense, do whatever you want with this. See `LICENSE.txt` for more information.
+Distributed under the MIT License. See `LICENSE.txt` for more information.
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
