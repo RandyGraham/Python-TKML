@@ -283,15 +283,7 @@ def get_id(node: xmlET.Element) -> str | None:
 
 
 class TKMLWidgetBuilder:
-    def __init__(
-        self,
-        print_debug=True,
-        parser=None,
-        custom_terminals={},
-        custom_commands={},
-        custom_branching={},
-        custom_layouts={},
-    ):
+    def __init__(self, print_debug=True, parser=None):
         self.terminals = {
             "Label": lambda master, node, parent: self._handle_terminal(
                 master, node, parent, ttk.Label
@@ -315,7 +307,6 @@ class TKMLWidgetBuilder:
             "OptionMenu": lambda master, node, parent: self._handle_terminal_optionmenu(
                 master, node, parent
             ),
-            **custom_terminals,
         }
         self.commands = {
             "RowConfigure": self._handle_command,
@@ -330,7 +321,6 @@ class TKMLWidgetBuilder:
             "Title": self._handle_command,
             "GetVar": self._handle_command,
             "Geometry": self._handle_command,
-            **custom_commands,
         }
         self.branching = {
             "LabelFrame": lambda master, node, parent: self._handle_branching(
@@ -342,17 +332,39 @@ class TKMLWidgetBuilder:
             "Toplevel": lambda master, node, parent: self._handle_toplevel(
                 master, node, parent, ttk.Toplevel
             ),
-            **custom_branching,
         }
         self.layouts = {
             "V": self._layout_V,
             "H": self._layout_H,
             "Grid": self._layout_Grid,
-            **custom_layouts,
         }
 
         self.print_debug = print_debug
         self.parser = parser
+
+    def add_terminal(self, widget_name, widget):
+        self.terminals[
+            widget_name
+        ] = lambda master, node, parent: self._handle_terminal(
+            master, node, parent, widget
+        )
+
+    def add_command(self, command_name, command):
+        self.commands[command_name] = lambda master, node, parent: command(
+            self, master, node, parent
+        )
+
+    def add_branching(self, widget_name, widget):
+        self.branching[
+            widget_name
+        ] = lambda master, node, parent: self._handle_branching(
+            master, node, parent, widget
+        )
+
+    def add_layout(self, layout_type, function):
+        self.layouts[layout_type] = lambda master, node, parent: function(
+            self, master, node, parent
+        )
 
     def _handle_terminal_table(
         self, master, node: xmlET.Element, parent: tk.Widget

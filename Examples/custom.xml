@@ -1,0 +1,11 @@
+<Frame layout="diagonal">
+    <Label text="Hello!"/>
+    <BlogPost title="How to add custom widgets to Python-TKML" author="Randy Graham" text="Read custom.py"/>
+    <Button text="This button does nothing" />
+    <Browser-Open url="https://github.com/RandyGraham/Python-TKML" />
+    <Label text="\" />
+    <Label text="\" />
+    <Label text="\" />
+    <Label text="\" />
+    <Label text="\" />
+</Frame>

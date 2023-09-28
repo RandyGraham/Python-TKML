@@ -354,7 +354,7 @@ table.pack(expand=1, fill="both")
 h_scrollbar.pack(fill="x")
 parent.pack()
 ```
-_For more examples, please refer to the [Examples](https://github.com/RandyGraham/Python-TKML/tree/main/Examples)_
+_For more examples -- including examples about adding your own custom widgets, layouts, and commands -- please refer to the [Examples](https://github.com/RandyGraham/Python-TKML/tree/main/Examples)_
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
