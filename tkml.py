@@ -301,12 +301,8 @@ class TKMLWidgetBuilder:
                 master, node, parent, ttk.Checkbutton
             ),
             # Special Items
-            "Table": lambda master, node, parent: self._handle_terminal_table(
-                master, node, parent
-            ),
-            "OptionMenu": lambda master, node, parent: self._handle_terminal_optionmenu(
-                master, node, parent
-            ),
+            "Table": self._handle_terminal_table,
+            "OptionMenu": self._handle_terminal_optionmenu,
         }
         self.commands = {
             "RowConfigure": self._handle_command,
