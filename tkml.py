@@ -285,7 +285,7 @@ def get_id(node: xmlET.Element) -> str | None:
         return None
 
 
-class TKMLDriverBuilder:
+class TKMLWidgetBuilder:
     def __init__(self, print_debug=True, parser=None):
         self.terminals = {
             "Label": lambda master, node, parent: self._handle_terminal(
@@ -667,4 +667,4 @@ class TKMLDriverBuilder:
         self.build_tkml(master, xmlET.parse(filepath, self.parser).getroot())
 
     def build_tkml_from_string(self, master: TKMLDriver, xmlstring: str):
-        self.build_tkml(master, xmlET.fromstring(xmlstring, self.parser).getroot())
+        self.build_tkml(master, xmlET.fromstring(xmlstring, self.parser))
