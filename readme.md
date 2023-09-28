@@ -68,9 +68,9 @@
 <!-- ABOUT THE PROJECT -->
 ## About The Project
 
-While making some large tkinter based graphics applications I found that the code for initializing Widgets and packing them was very repetitive and cluttered up the program's actual logic. I wanted to be able to use a Markup language to structure the project because tkinter widgets are very heirarchical. I looked at other projects which were trying to solve this but none of them seemed to appeal to me because things seemed over-complicated.
+While making some large tkinter based graphics applications I found that the code for initializing Widgets and packing them was very repetitive and cluttered up the program's actual logic. I wanted to be able to use a Markup language to structure the project because tkinter widgets are very heirarchical. I looked at other projects which were trying to solve this but none of them seemed to appeal to me because they seemed to diverge too heavily from native tkinter, meaning you would have to learn a lot from scratch.
 
-Tkinter Widgets, like xml tags, have a name, keywords, a parent, children, and sometimes a single positional argument; I knew that with a simple tree visitor I could automatically convert the tags to widgets and pass their xml attributes to themselves after a little type conversion. This approach proved to be effective and now I can make very clean applications with easy layouts.
+Tkinter Widgets, like xml tags, have a name, keywords, a parent, children, and sometimes a single positional argument; I knew that with a simple tree visitor I could automatically convert the tags to widgets and pass their xml attributes to themselves after a little type conversion. This approach proved to be effective and now I can make very clean applications with easy layouts, and I can use the tkinter knowledge I already have.
 
 Benefits:
 * Cleaner Code - Your program logic is not cluttered up and hidden within tons of unimportant gui code, and the structure of your widget's masters and children are easily seen at a glance.
