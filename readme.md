@@ -285,8 +285,8 @@ frame.pack(expand=1, fill="both")
 Vertical
 ```xml
 <Frame layout="V">
-    <AnyWidget fill="x">
-    <AnyWidget expand="0">
+    <AnyWidget fill="x" />
+    <AnyWidget expand="0" />
 </Frame>
 ```
 ```python
@@ -301,8 +301,8 @@ frame.pack(expand="1", fill="both")
 Horizontal
 ```xml
 <Frame layout="H" fill="y">
-    <AnyWidget fill="x">
-    <AnyWidget expand="0">
+    <AnyWidget fill="x" />
+    <AnyWidget expand="0" />
 </Frame>
 ```
 ```python
