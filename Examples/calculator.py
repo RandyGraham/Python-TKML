@@ -1,5 +1,5 @@
 import tkinter as tk
-from tkml import TKMLWidget
+from tkml import TKMLWidget, TKMLWidgetBuilder
 
 
 class Calculator(TKMLWidget):
@@ -38,7 +38,7 @@ class Calculator(TKMLWidget):
     def load(self):
         if self.load_store_var is not None:
             self.enter(self.load_store_var)
-    
+
     def store(self):
         self.load_store_var = self["buffer"].get()
 
@@ -54,6 +54,6 @@ class Calculator(TKMLWidget):
 
 root = tk.Tk()
 calc = Calculator(root)
-calc.build_tkml_from_file("./calculator.xml")
+TKMLWidgetBuilder().build_tkml_from_file(calc, "./calculator.xml")
 calc.pack()
 root.mainloop()
