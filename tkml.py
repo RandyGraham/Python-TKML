@@ -348,6 +348,7 @@ class TKMLWidgetBuilder:
             "V": self._layout_V,
             "H": self._layout_H,
             "Grid": self._layout_Grid,
+            **custom_layouts,
         }
 
         self.print_debug = print_debug
@@ -522,7 +523,6 @@ class TKMLWidgetBuilder:
                         occupied[(x, y)] = True
 
                 # pack the child_widget
-                print(row_index, column_index, layout_attributes)
                 child_widget.grid(
                     row=row_index, column=column_index, **layout_attributes
                 )
@@ -617,7 +617,7 @@ class TKMLWidgetBuilder:
         root_widget.pack(**layout_attributes)
 
     def build_tkml_from_file(self, master: TKMLWidget, filepath: str):
-        self.build_tkml(master, xmlET.parse(filepath).getroot())
+        self.build_tkml(master, xmlET.parse(filepath, self.parser).getroot())
 
     def build_tkml_from_string(self, master: TKMLWidget, xmlstring: str):
-        self.build_tkml(master, xmlET.fromstring(xmlstring).getroot())
+        self.build_tkml(master, xmlET.fromstring(xmlstring, self.parser).getroot())
