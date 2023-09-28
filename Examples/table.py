@@ -1,4 +1,4 @@
-from tkml import TKMLWidget, TKMLTopLevel, TKMLWidgetBuilder
+from tkml import TKMLDriver, TKMLTopLevelDriver, TKMLWidgetBuilder
 import random
 import tkinter as tk
 
@@ -19,13 +19,13 @@ food_descriptors = [
 food_nouns = ["Cookie", "Cake", "Hot Dog", "Steak", "Potatoes", "Milkshake"]
 
 
-class Popup(TKMLTopLevel):
+class Popup(TKMLTopLevelDriver):
     def __init__(self, food_count):
         super().__init__()
         self.food_count = tk.IntVar(value=food_count)
 
 
-class TableExample(TKMLWidget):
+class TableExample(TKMLDriver):
     def __init__(self, parent):
         super().__init__(parent)
         self.food_count = tk.IntVar()

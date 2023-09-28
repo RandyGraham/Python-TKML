@@ -153,7 +153,7 @@ class TKMLTreeView(ttk.Frame):
             return getattr(self.treeview, name)
 
 
-class TKMLWidget(ttk.Frame):
+class TKMLDriver(ttk.Frame):
     """Master Widget for TKML based on ttk Frame
 
     Contains special variables which the xml transformer depends on
@@ -168,7 +168,7 @@ class TKMLWidget(ttk.Frame):
         return self._tkml_variables[key]
 
 
-class TKMLTopLevel(tk.Toplevel):
+class TKMLTopLevelDriver(tk.Toplevel):
     """Master Widget for TKML based on ttk Toplevel
 
     Contains special variables which the xml transformer depends on
@@ -189,7 +189,7 @@ class TKMLTopLevel(tk.Toplevel):
         self.update()
 
 
-def make_call(master: TKMLWidget, function_name: str) -> callable:
+def make_call(master: TKMLDriver, function_name: str) -> callable:
     def _call():
         func = getattr(master, function_name)
         if not callable(func):
@@ -201,7 +201,7 @@ def make_call(master: TKMLWidget, function_name: str) -> callable:
     return _call
 
 
-def lookup(master: TKMLWidget, id_: int):
+def lookup(master: TKMLDriver, id_: int):
     return master._tkml_variables[id_]
 
 
@@ -239,7 +239,7 @@ def pull_layout_attributes(node: xmlET.Element):
     return layout_params
 
 
-def patch_attributes(master: TKMLWidget, node: xmlET.Element):
+def patch_attributes(master: TKMLDriver, node: xmlET.Element):
     """Convert the node's attributes inplace"""
     # Autoconvert numbers
     for attribute in node.attrib:
@@ -262,6 +262,9 @@ def patch_attributes(master: TKMLWidget, node: xmlET.Element):
     if "columns" in node.attrib:
         node.attrib["columns"] = parse_list(node.attrib["columns"])
 
+    if "values" in node.attrib:
+        node.attrib["values"] = parse_list(node.attrib["values"])
+
     if "inline_style" in node.attrib:
         inline_style_attribs = parse_dict(node.attrib["inline_style"])
         node.attrib.pop("inline_style")
@@ -282,7 +285,7 @@ def get_id(node: xmlET.Element) -> str | None:
         return None
 
 
-class TKMLWidgetBuilder:
+class TKMLDriverBuilder:
     def __init__(self, print_debug=True, parser=None):
         self.terminals = {
             "Label": lambda master, node, parent: self._handle_terminal(
@@ -299,6 +302,18 @@ class TKMLWidgetBuilder:
             ),
             "Checkbutton": lambda master, node, parent: self._handle_terminal(
                 master, node, parent, ttk.Checkbutton
+            ),
+            "Radiobutton": lambda master, node, parent: self._handle_terminal(
+                master, node, parent, ttk.Radiobutton
+            ),
+            "Spinbox": lambda master, node, parent: self._handle_terminal(
+                master, node, parent, ttk.Spinbox
+            ),
+            "Combobox": lambda master, node, parent: self._handle_terminal(
+                master, node, parent, ttk.Combobox
+            ),
+            "Scale": lambda master, node, parent: self._handle_terminal(
+                master, node, parent, ttk.Scale
             ),
             # Special Items
             "Table": self._handle_terminal_table,
@@ -325,6 +340,7 @@ class TKMLWidgetBuilder:
             "Frame": lambda master, node, parent: self._handle_branching(
                 master, node, parent, ttk.Frame
             ),
+            "Notebook": self._handle_notebook,
             "Toplevel": lambda master, node, parent: self._handle_toplevel(
                 master, node, parent, ttk.Toplevel
             ),
@@ -600,6 +616,29 @@ class TKMLWidgetBuilder:
 
         return self.layouts[layout_type](master, node, widget)
 
+    def _handle_notebook(self, master, node: xmlET.Element, parent: tk.Widget):
+        patch_attributes(master, node)
+        id_ = get_id(node)
+
+        notebook_widget = ttk.Notebook(parent, **node.attrib)
+
+        for child in node:
+            if child.tag in self.commands:
+                self._handle_command(master, child, notebook_widget)
+                continue
+            tabname = child.tag
+            if "tabname" in child.attrib:
+                tabname = child.attrib.pop("tabname")
+
+            child_widget = self._handle_any(master, child, notebook_widget)
+
+            notebook_widget.add(child_widget, text=tabname)
+
+        if id_ is not None:
+            master._tkml_variables[id_] = notebook_widget
+
+        return notebook_widget
+
     def _handle_any(
         self, master, node: xmlET.Element, parent: tk.Widget
     ) -> None | tk.Widget:
@@ -624,8 +663,8 @@ class TKMLWidgetBuilder:
             return
         root_widget.pack(**layout_attributes)
 
-    def build_tkml_from_file(self, master: TKMLWidget, filepath: str):
+    def build_tkml_from_file(self, master: TKMLDriver, filepath: str):
         self.build_tkml(master, xmlET.parse(filepath, self.parser).getroot())
 
-    def build_tkml_from_string(self, master: TKMLWidget, xmlstring: str):
+    def build_tkml_from_string(self, master: TKMLDriver, xmlstring: str):
         self.build_tkml(master, xmlET.fromstring(xmlstring, self.parser).getroot())

@@ -4,7 +4,7 @@ import tkml
 import webbrowser
 
 
-class BlogPost(ttk.Frame):
+class BlogPost(tkml.TKMLDriver):
     def __init__(self, parent, author, title, text):
         super().__init__(parent)
         self.parent = parent

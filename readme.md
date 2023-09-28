@@ -93,7 +93,7 @@ None. TKML doesn't use anything outside of the standard library. Linux users may
 Drag tkml.py into your project directory.
 
 ```python
-from tkml import TKMLWidget, TKMLWidgetBuilder
+from tkml import TKMLDriver, TKMLWidgetBuilder
 
 widget_builder = TMKLWidgetBuilder()
 ```
@@ -156,10 +156,10 @@ widget_builder = TMKLWidgetBuilder()
 ### Example Calculator Python
 ```python
 import tkinter as tk
-from tkml import TKMLWidget, TKMLWidgetBuilder
+from tkml import TKMLDriver, TKMLWidgetBuilder
 
 
-class Calculator(TKMLWidget):
+class Calculator(TKMLDriver):
     def __init__(self, parent):
         super().__init__(parent)
         self.load_store_var = None

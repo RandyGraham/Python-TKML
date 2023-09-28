@@ -1,8 +1,8 @@
 import tkinter as tk
-from tkml import TKMLWidget, TKMLWidgetBuilder
+from tkml import TKMLDriver, TKMLWidgetBuilder
 
 
-class Calculator(TKMLWidget):
+class Calculator(TKMLDriver):
     def __init__(self, parent):
         super().__init__(parent)
         self.paren_state = tk.StringVar(value="(")
