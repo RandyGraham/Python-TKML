@@ -4,6 +4,7 @@ from string import ascii_letters
 DebugToken = namedtuple("DebugToken", ("line", "col", "ch"))
 DebugSymbol = namedtuple("DebugSymbol", ("start", "end", "text"))
 
+
 class Debugger:
     def __init__(self, text):
         print("Debugging info injector -- Experimental")
@@ -17,20 +18,25 @@ class Debugger:
             for col, ch in enumerate(line):
                 self.tokens.append(DebugToken(row + 1, col + 1, ch))
             self.tokens.append(DebugToken(row + 1, len(line) + 1, "\n"))
-        print("".join([t.ch for t in self.tokens]))
-
-    def _ignore_until(self, ch):
-        while self.tokens[self.p].ch != ch:
-            self.p += 1
 
     def print_buffer(self, buffer):
-        print("".join( [t.ch for t in buffer]))
+        print("BUFFER: |", "".join([t.ch for t in buffer]).replace("\n", "$"))
 
-    def get_window(self, window):
-        return "".join([t.ch for t in self.tokens[self.p-window:self.p+window]])
+    def buffer2str(self, buffer):
+        return "".join(t.ch for t in buffer)
 
     def print_window(self, window=12):
-        print( "WINDOW:", "".join( [t.ch.replace("\n", "$").replace(" ", ".") for t in self.tokens[self.p-window:self.p+window]] ), "Current:", self.tokens[self.p].ch )
+        print(
+            "WINDOW: |"
+            + self.buffer2str(self.tokens[self.p - window : self.p]).replace("\n", "$")
+            + "["
+            + self.tokens[self.p].ch.replace("\n", "$")
+            + "]"
+            + self.buffer2str(self.tokens[self.p + 1 : self.p + 1 + window]).replace(
+                "\n", "$"
+            )
+            + "|"
+        )
 
     def parse_start_tag(self, keep_ws=False):
         print("PARSE START TAG")
@@ -44,13 +50,13 @@ class Debugger:
         buffer.append(self.tokens[self.p])
         self.p += 1
 
-        #character* ["/"]
+        # character* ["/"]
         self_closing = False
         inside_string = False
         while self.tokens[self.p].ch != ">":
             buffer.append(self.tokens[self.p])
             if self.tokens[self.p].ch == '"':
-                inside_string = not(inside_string)
+                inside_string = not (inside_string)
             if self.tokens[self.p].ch == "/" and not inside_string:
                 self_closing = True
             self.p += 1
@@ -59,9 +65,10 @@ class Debugger:
         buffer.append(self.tokens[self.p])
         self.p += 1
         self.print_buffer(buffer)
-        print("END PARSE START TAG")
+        self.print_window()
+        print("END PARSE START TAG\n\n")
         return buffer, self_closing
-        
+
     def parse_end_tag(self):
         print("PARSE END TAG")
         # "<" WS* "/" character* ">"
@@ -75,9 +82,36 @@ class Debugger:
         buffer.append(self.tokens[self.p])
         self.p += 1
         # Get rid of extra whitespace
+        while self.tokens[self.p + 1].ch != "<":
+            buffer.append(self.tokens[self.p])
+            self.p += 1
         self.print_buffer(buffer)
-        print("END PARSE END TAG")
+        self.print_window()
+        print("END PARSE END TAG\n\n")
         return buffer
+
+    def next_tag_type(self):
+        # Check if there is another element
+        p = self.p
+
+        if p + 1 >= len(self.tokens):
+            return "eof"
+
+        while self.tokens[p].ch != "<":
+            if p + 1 >= len(self.tokens):
+                return "eof"
+            p += 1
+
+        # self.tokens[p] == "<"
+        p += 1
+
+        while self.tokens[p] == " ":
+            p += 1
+
+        if self.tokens[p] == "/":
+            return "end"
+        else:
+            return "start"
 
     def parse_element(self):
         print("PARSE ELEMENT")
@@ -100,12 +134,13 @@ class Debugger:
             while self.tokens[p].ch != "/":
                 p -= 1
 
-            self.injection_points[ p ] = self.symbol_count
+            self.injection_points[p] = self.symbol_count
             self.symbol_count += 1
             self.print_buffer(buffer)
-            print("END PARSE ELEMENT")
+            self.print_window()
+            print("END PARSE ELEMENT\n\n")
             return buffer
-        
+
         injection_point = self.p
         # [  (element* or character*)
         # Check if it's going to be elements
@@ -115,33 +150,20 @@ class Debugger:
             if self.tokens[p].ch in ascii_letters:
                 is_element = False
             p += 1
-        
-        print(f"PARSE ELEMENT :: PARSE CHIDLREN :: MODE={ 'elements' if is_element else 'text' }")
+
+        print(
+            f"PARSE ELEMENT :: PARSE CHIDLREN :: MODE={ 'elements' if is_element else 'text' }"
+        )
         if is_element:
             # element *
-            while True:
-                # Check if there is another element
-                p = self.p
-
-                end = True
-
-                while self.tokens[p].ch != "<":
-                    p += 1
-
-                p += 1
-                
-                while self.tokens[p].ch != "/":
-                    if self.tokens[p].ch != " ":
-                        end = False
-                    p += 1
-                
-                if end:
-                    break
-
-                self.print_buffer(buffer)
-
+            while self.next_tag_type() == "start":
+                print("RECURSING")
                 child_buffer = self.parse_element()
                 buffer.extend(child_buffer)
+                print("BACK TO MAIN")
+
+                self.print_buffer(buffer)
+                self.print_window()
                 self.p += 1
         else:
             # character *
@@ -149,19 +171,19 @@ class Debugger:
                 buffer.append(self.tokens[self.p])
                 self.p += 1
 
-        self.print_buffer(buffer)
-        print("PARSE ELEMENT :: END PARSE CHILDREN")
+        print("PARSE ELEMENT :: END PARSE CHILDREN\n")
         # end_tag
         end_buffer = self.parse_end_tag()
         buffer.extend(end_buffer)
-        self.print_buffer(buffer)
-        print("END PARSE ELEMENT")
+        print("END PARSE ELEMENT\n\n")
 
-        symbol = (
-            f"╔ Element @ Line {buffer[0].line}, Col {buffer[0].col}\n"
-            + "".join([t.ch for t in buffer])
-            + f"╚ End @ Line {buffer[-1].line}, Col {buffer[-1].col}"
-        )
+        symbol = f"\n╔ Element @ Line {buffer[0].line}, Col {buffer[0].col}\n"
+
+        for line in "".join([t.ch for t in buffer]).split("\n"):
+            symbol += "║ " + line + "\n"
+
+        symbol += f"╚ End @ Line {buffer[-1].line}, Col {buffer[-1].col}"
+
         self.symbols[self.symbol_count] = symbol
         self.injection_points[injection_point] = self.symbol_count
         self.symbol_count += 1
@@ -169,9 +191,6 @@ class Debugger:
         return buffer
 
 
-
-
-    
 with open("./calculator.xml", "r") as f:
     d = Debugger(f.read())
     d.parse_element()
@@ -179,8 +198,8 @@ with open("./calculator.xml", "r") as f:
     previous = 0
     buffer = []
     for injection in d.injection_points:
-        buffer.append( d.text[previous:injection-1] )
-        previous = injection-1
-        buffer.append( f' _DEBUG_SYM_REF = "{d.injection_points[injection]}" ' )
+        buffer.append(d.text[previous : injection - 1])
+        previous = injection - 1
+        buffer.append(f' _DEBUG_SYM_REF = "{d.injection_points[injection]}" ')
         print(injection)
     print("".join(buffer))
