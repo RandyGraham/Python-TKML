@@ -210,7 +210,7 @@ class Calculator(TKMLDriver):
 
 root = tk.Tk()
 calc = Calculator(root)
-TKMLWidgetBuilder().build_tkml_from_file("./calculator.xml")
+TKMLWidgetBuilder().build_tkml_from_file(calc, "./calculator.xml")
 calc.pack()
 root.mainloop()
 ```
@@ -318,6 +318,18 @@ any1.pack(fill="x", expand="1")
 any2 = AnyWidget(frame)
 any2.pack(fill="both", expand="0")
 frame.pack(expand="1", fill="y")
+```
+Notebook
+```xml
+<Notebook>
+  <Frame tabname="First Tab">
+    <Label text="Hello from Tab 1" />
+  </Frame>
+  <!-->If no tabname is provided it is set to the element name. In this case "Frame"<-->
+  <Frame>
+    <Label text="Hello from Tab 2" />
+  </Frame>
+</Notebook>
 ```
 #### Special Widgets
 ##### Optionmenu
