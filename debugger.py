@@ -32,7 +32,7 @@ class Debugger:
     def print_window(self, window=12):
         print( "WINDOW:", "".join( [t.ch.replace("\n", "$").replace(" ", ".") for t in self.tokens[self.p-window:self.p+window]] ), "Current:", self.tokens[self.p].ch )
 
-    def parse_start_tag(self):
+    def parse_start_tag(self, keep_ws=False):
         print("PARSE START TAG")
         # WS* "<" character* ["/"] ">"
         # WHITE SPACE *
@@ -71,19 +71,20 @@ class Debugger:
         buffer = []
         buffer.append(self.tokens[self.p])
         self.p += 1
-        while buffer != ">":
+        while self.tokens[self.p].ch != ">":
             buffer.append(self.tokens[self.p])
             self.p += 1
         # ">"
         buffer.append(self.tokens[self.p])
         self.p += 1
+        # Get rid of extra whitespace
         self.print_buffer(buffer)
         print("END PARSE END TAG")
         return buffer
 
     def parse_element(self):
         print("PARSE ELEMENT")
-        # start_tag [ (element* or character*) end_tag ]
+        # start_tag [ (element* or character*) end_tag ] [END]
 
         # start_tag
         buffer = []
@@ -93,15 +94,17 @@ class Debugger:
         if self_closing:
             symbol = (
                 f"Self-Closing Tag @ Line {buffer[0].line}, Col {buffer[0].col}\n"
-                + ["".join([t.ch for t in buffer])]
+                + "".join([t.ch for t in buffer])
             )
             print("New Symbol", symbol)
             self.symbols[self.symbol_count] = symbol
-            self.injection_points[ (buffer[-2].line, buffer[-2].col) ] = self.symbol_count
+            self.injection_points[ self.p ] = self.symbol_count
             self.symbol_count += 1
             self.print_buffer(buffer)
             print("END PARSE ELEMENT")
             return buffer
+        
+        injection_point = self.p
         # [  (element* or character*)
         # Check if it's going to be elements
         is_element = True
@@ -111,10 +114,21 @@ class Debugger:
                 is_element = False
             p += 1
         
-        
+        print(f"PARSE ELEMENT :: PARSE CHIDLREN :: MODE={ 'elements' if is_element else 'text' }")
         if is_element:
             # element *
-            while self.tokens[self.p].ch != "<":
+            while True:
+                # Check if the next tag closes the element
+                p = self.p
+                encouter_count = 0
+                while self.tokens[p].ch != "/":
+                    if self.tokens[p].ch == "<":
+                        encouter_count += 1
+                    p += 1
+                
+                if encouter_count == 1:
+                    break
+
                 child_buffer = self.parse_element()
                 buffer.extend(child_buffer)
                 self.p += 1
@@ -124,11 +138,23 @@ class Debugger:
                 buffer.append(self.tokens[self.p])
                 self.p += 1
 
+        self.print_buffer(buffer)
+        print("PARSE ELEMENT :: END PARSE CHILDREN")
         # end_tag
         end_buffer = self.parse_end_tag()
         buffer.extend(end_buffer)
         self.print_buffer(buffer)
         print("END PARSE ELEMENT")
+
+        symbol = (
+            f"Element @ Line {buffer[0].line}, Col {buffer[0].col}\n"
+            + "".join([t.ch for t in buffer])
+        )
+        self.symbols[self.symbol_count] = symbol
+        self.injection_points[injection_point] = self.symbol_count
+        self.symbol_count += 1
+        print("New Symbol", symbol)
+        print(self.symbols)
         return buffer
 
 
@@ -136,4 +162,14 @@ class Debugger:
 
     
 with open("./calculator.xml", "r") as f:
-    Debugger(f.read()).parse_element()
+    d = Debugger(f.read())
+    d.parse_element()
+    print(d.symbols)
+    previous = 0
+    buffer = []
+    for injection in d.injection_points:
+        buffer.append( d.text[previous:injection-1] )
+        previous = injection-1
+        buffer.append( f' _DEBUG_SYM_REF = "{d.injection_points[injection]}"' )
+        print(injection)
+    print("".join(buffer))
