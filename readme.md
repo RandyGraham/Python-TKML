@@ -250,6 +250,7 @@ is used to easily make the grid resizable
     </Row>
     <Row>
         <AnyWidget />
+        <Empty columnspan="2" />
         <AnyWidget />
         <AnyWidget />
     </Row>
@@ -266,9 +267,9 @@ bigWidget.grid(row=0, column=0, columnspan=2, rowspan=2, sticky="nsew")
 anyWidget1 = AnyWidget(frame)
 anyWidget1.grid(row=1, column=2)
 anyWidget2 = AnyWidget(frame)
-anyWidget2.grid(row=1, column=3)
+anyWidget2.grid(row=1, column=4)
 anyWidget3 = AnyWidget(frame)
-anyWidget3.grid(row=1, column=4)
+anyWidget3.grid(row=1, column=6)
 longWidget = LongWidget(frame)
 longWidget.grid(row=2, column=0, columnspan=5, sticky="ew")
 # from rowweight="1"
@@ -278,9 +279,12 @@ for row in range(0, 3):
 for col in range(0, 5):
   frame.grid_columnconfigure(col, weight=1)
 frame.pack(expand=1, fill="both")
-# Big  Big
-# Big  Big  Any1 Any2 Any3
-# Long Long Long Long Long
+#
+# |Big  Big|
+# |Big__Big| Any1           Any2 Any3
+# |Long Long Long Long Long|
+#
+
 ```
 
 ##### Vertical and Horizontal

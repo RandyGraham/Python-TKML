@@ -52,8 +52,9 @@ class Calculator(TKMLDriver):
         self["buffer"].set("")
 
 
-root = tk.Tk()
-calc = Calculator(root)
-TKMLWidgetBuilder().build_tkml_from_file(calc, "./calculator.xml")
-calc.pack()
-root.mainloop()
+if __name__ == "__main__":
+    root = tk.Tk()
+    calc = Calculator(root)
+    TKMLWidgetBuilder().build_tkml_from_file(calc, "./calculator.xml")
+    calc.pack()
+    root.mainloop()
