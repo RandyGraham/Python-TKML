@@ -13,10 +13,6 @@ import datetime
 import uuid
 from collections import namedtuple
 
-DebugToken = namedtuple("DebugToken", ("line", "col", "ch"))
-DebugSymbol = namedtuple("DebugSymbol", ("start", "end", "text"))
-
-
 class TKMLInvalidElement(Exception):
     pass
 
@@ -280,87 +276,6 @@ def get_id(node: xmlET.Element) -> str | None:
     else:
         return None
 
-
-class Debugger:
-    def __init__(self, text):
-        self.text = text.replace("\t", "    ")
-        self.symbols = {}
-        self.symbol_count = 0
-        self.injection_points = {}
-        self.p = 0
-        self.tokens = []
-        for row, line in enumerate(self.text.split("\n")):
-            for col, ch in enumerate(line):
-                self.tokens.append(DebugToken(row + 1, col + 1, ch))
-            self.tokens.append(DebugToken(row + 1, len(line) + 1, "\n"))
-        print("".join([t.ch for t in self.tokens]))
-
-    def _ignore_until(self, ch):
-        while self.tokens[self.p].ch != ch:
-            self.p += 1
-
-    def _parse_tag(self):
-        print("START PARSE TAG")
-        self._ignore_until("<")
-        # tokens[self.p] == "<"
-        buffer = []
-        self_closing = False
-        inside_string = False
-        # < * [/]>
-        while self.tokens[self.p].ch != ">":
-            buffer.append(self.tokens[self.p])
-            if self.tokens[self.p].ch == '"':
-                inside_string = not (inside_string)
-            if self.tokens[self.p].ch == "/" and not inside_string:
-                self_closing = True
-
-            self.p += 1
-        buffer.append(self.tokens[self.p])
-        print("".join([t.ch for t in buffer]))
-        assert self.tokens[self.p].ch == ">", self.tokens[self.p].ch
-
-        if self_closing:
-            symbol = (
-                f"Self Closing Tag @ Line {buffer[0].line}, Col {buffer[0].col}: "
-                + "".join([t.ch for t in buffer])
-            )
-            self.symbols[self.symbol_count] = symbol
-            print("Added Symbol:", symbol)
-            return buffer, True
-
-        print("END PARSE TAG")
-        return buffer, False
-
-    def parse(self):
-        print("START PARSE ELEMENT")
-        # START [CHILDREN* END]
-        buffer = []
-        start, self_closing = self._parse_tag()
-        buffer.extend(start)
-        print("".join([t.ch for t in start]))
-        if self_closing:
-            print("END PARSE ELEMENT")
-            return buffer, True
-
-        # Parse Children
-        while self.tokens[self.p + 1].ch != "<":
-            if self.tokens[self.p] == "<":
-                print("Recursing", "".join([t.ch for t in buffer]))
-                child, self_closing = self.parse()
-                buffer.extend(child)
-            else:
-                buffer.append(self.tokens[self.p])
-
-            self.p += 1
-        print("".join([t.ch for t in buffer]))
-        # Parse End
-        end, _ = self._parse_tag()
-        buffer.extend(end)
-        print("".join([t.ch for t in end]))
-        print("END PARSE ELEMENT")
-        return buffer, False
-
-
 class TKMLWidgetBuilder:
     def __init__(self, debug=True, parser=None):
         self.debug = debug
@@ -523,7 +438,6 @@ class TKMLWidgetBuilder:
 
         patch_attributes(master, node)
 
-        dprint("command", node.tag, node.attrib)
         if node.tag == "RowConfigure":
             parent.grid_rowconfigure(int(node.text), **node.attrib)
 
