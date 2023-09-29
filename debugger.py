@@ -44,7 +44,6 @@ class Debugger:
         buffer.append(self.tokens[self.p])
         self.p += 1
 
-
         #character* ["/"]
         self_closing = False
         inside_string = False
@@ -55,8 +54,6 @@ class Debugger:
             if self.tokens[self.p].ch == "/" and not inside_string:
                 self_closing = True
             self.p += 1
-
-        
 
         # ">"
         buffer.append(self.tokens[self.p])
@@ -98,7 +95,12 @@ class Debugger:
             )
             print("New Symbol", symbol)
             self.symbols[self.symbol_count] = symbol
-            self.injection_points[ self.p ] = self.symbol_count
+
+            p = self.p
+            while self.tokens[p].ch != "/":
+                p -= 1
+
+            self.injection_points[ p ] = self.symbol_count
             self.symbol_count += 1
             self.print_buffer(buffer)
             print("END PARSE ELEMENT")
@@ -118,16 +120,25 @@ class Debugger:
         if is_element:
             # element *
             while True:
-                # Check if the next tag closes the element
+                # Check if there is another element
                 p = self.p
-                encouter_count = 0
+
+                end = True
+
+                while self.tokens[p].ch != "<":
+                    p += 1
+
+                p += 1
+                
                 while self.tokens[p].ch != "/":
-                    if self.tokens[p].ch == "<":
-                        encouter_count += 1
+                    if self.tokens[p].ch != " ":
+                        end = False
                     p += 1
                 
-                if encouter_count == 1:
+                if end:
                     break
+
+                self.print_buffer(buffer)
 
                 child_buffer = self.parse_element()
                 buffer.extend(child_buffer)
