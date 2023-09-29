@@ -158,14 +158,14 @@ class Debugger:
         print("END PARSE ELEMENT")
 
         symbol = (
-            f"Element @ Line {buffer[0].line}, Col {buffer[0].col}\n"
+            f"╔ Element @ Line {buffer[0].line}, Col {buffer[0].col}\n"
             + "".join([t.ch for t in buffer])
+            + f"╚ End @ Line {buffer[-1].line}, Col {buffer[-1].col}"
         )
         self.symbols[self.symbol_count] = symbol
         self.injection_points[injection_point] = self.symbol_count
         self.symbol_count += 1
         print("New Symbol", symbol)
-        print(self.symbols)
         return buffer
 
 
@@ -181,6 +181,6 @@ with open("./calculator.xml", "r") as f:
     for injection in d.injection_points:
         buffer.append( d.text[previous:injection-1] )
         previous = injection-1
-        buffer.append( f' _DEBUG_SYM_REF = "{d.injection_points[injection]}"' )
+        buffer.append( f' _DEBUG_SYM_REF = "{d.injection_points[injection]}" ' )
         print(injection)
     print("".join(buffer))
