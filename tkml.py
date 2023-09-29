@@ -11,14 +11,10 @@ from functools import partial
 import xml.etree.ElementTree as xmlET
 import datetime
 import uuid
-from string import ascii_letters
+from collections import namedtuple
 
-DEBUG = False
-
-if DEBUG:
-    dprint = print
-else:
-    dprint = lambda *args, **kwargs: None
+DebugToken = namedtuple("DebugToken", ("line", "col", "ch"))
+DebugSymbol = namedtuple("DebugSymbol", ("start", "end", "text"))
 
 
 class TKMLInvalidElement(Exception):
@@ -81,7 +77,7 @@ def parse_dict(text: str) -> dict:
             keybuffer += ch
         elif c_buffer == "value":
             valuebuffer += ch
-    dprint(f"Parse Dict {text} -> {dict_}")
+    print(f"Parse Dict {text} -> {dict_}")
     return dict_
 
 
@@ -285,8 +281,78 @@ def get_id(node: xmlET.Element) -> str | None:
         return None
 
 
+class Debugger:
+    def __init__(self, text):
+        self.text = text
+        self.symbols = {}
+        self.symbol_count = 0
+        self.injection_points = {}
+        self.p = 0
+        self.tokens = []
+        for row, line in enumerate(self.text.split("\n")):
+            for col, ch in enumerate(line):
+                self.tokens.append(DebugToken(row, col, ch))
+
+    def _ignore_until(self, ch):
+        while self.tokens[self.p].ch != ch:
+            self.p += 1
+
+    def _parse_tag(self):
+        self._ignore_until("<")
+        # tokens[self.p] == "<"
+        buffer = [self.tokens[self.p]]
+        self.p += 1
+        self_closing = False
+        inside_string = False
+        while self.tokens[self.p].ch != "<":
+            buffer.append(self.tokens[self.p])
+            if self.tokens[self.p].ch == '"':
+                inside_string = not (inside_string)
+            if self.tokens[self.p].ch == "/" and not inside_string:
+                self_closing = True
+            self.p += 1
+        buffer.append(">")
+        if self_closing:
+            symbol = (
+                f"Self Closing Tag @ Line {buffer[0].line}, Col {buffer[0].col}\n"
+                + "".join([t.ch for t in buffer])
+            )
+            self.symbols[self.symbol_count] = symbol
+            print("Added Symbol:", symbol)
+            return buffer, True
+        print(self.tokens[self.p].ch)
+        return buffer, False
+
+    def parse(self):
+        # START [CHILDREN* END]
+        buffer = []
+        start, self_closing = self._parse_tag()
+        buffer.extend(start)
+
+        print("".join([t.ch for t in start]), self_closing)
+        if self_closing:
+            return buffer, True
+
+        # Parse Children
+        while self.tokens[self.p + 1].ch != "<":
+            if self.tokens[self.p] == "<":
+                child, self_closing = self.parse()
+                buffer.extend(child)
+            else:
+                buffer.append(self.tokens[self.p])
+            self.p += 1
+        # Parse End
+        end, _ = self._parse_tag()
+        buffer.extend(end)
+        print("".join([t.ch for t in end]))
+        return buffer, False
+
+
 class TKMLWidgetBuilder:
-    def __init__(self, print_debug=True, parser=None):
+    def __init__(self, debug=True, parser=None):
+        self.debug = debug
+        self.parser = parser
+        self.symbols = {}
         self.terminals = {
             "Label": lambda master, node, parent: self._handle_terminal(
                 master, node, parent, ttk.Label
@@ -350,9 +416,6 @@ class TKMLWidgetBuilder:
             "H": self._layout_H,
             "Grid": self._layout_Grid,
         }
-
-        self.print_debug = print_debug
-        self.parser = parser
 
     def add_terminal(self, widget_name, widget):
         self.terminals[
@@ -493,7 +556,6 @@ class TKMLWidgetBuilder:
         return None
 
     def _layout_Grid(self, master, node, parent):
-        dprint("LAYOUT TYPE: Grid")
         rowweight = node.attrib.pop("rowweight")
         columnweight = node.attrib.pop("columnweight")
         row_max = 0
@@ -666,7 +728,16 @@ class TKMLWidgetBuilder:
         root_widget.pack(**layout_attributes)
 
     def build_tkml_from_file(self, master: TKMLDriver, filepath: str):
-        self.build_tkml(master, xmlET.parse(filepath, self.parser).getroot())
+        if self.debug:
+            with open(filepath, "r") as f:
+                self.build_tkml_from_string(master, f.read())
+        else:
+            self.build_tkml(master, xmlET.parse(filepath, self.parser).getroot())
 
     def build_tkml_from_string(self, master: TKMLDriver, xmlstring: str):
+        if self.debug:
+            debugger = Debugger(xmlstring).parse()
+            self.build_tkml(
+                master, xmlET.fromstring(self.inject_debug_info(xmlstring), self.parser)
+            )
         self.build_tkml(master, xmlET.fromstring(xmlstring, self.parser))
