@@ -18,6 +18,7 @@ class Debugger:
             for col, ch in enumerate(line):
                 self.tokens.append(DebugToken(row + 1, col + 1, ch))
             self.tokens.append(DebugToken(row + 1, len(line) + 1, "\n"))
+        self.tokens.append(DebugToken(0, 0, "EOF"))
 
     def print_buffer(self, buffer):
         print("BUFFER: |", "".join([t.ch for t in buffer]).replace("\n", "$"))
@@ -25,8 +26,8 @@ class Debugger:
     def buffer2str(self, buffer):
         return "".join(t.ch for t in buffer)
 
-    def print_window(self, window=12):
-        print(
+    def get_window(self, window=12):
+        return (
             "WINDOW: |"
             + self.buffer2str(self.tokens[self.p - window : self.p]).replace("\n", "$")
             + "["
@@ -38,15 +39,30 @@ class Debugger:
             + "|"
         )
 
+    def print_window(self, window=12):
+        print(self.get_window(window))
+
+    def parse_white_space(self):
+        buffer = []
+        self.print_window()
+        while self.tokens[self.p].ch in " \n\t":
+            buffer.append(self.tokens[self.p])
+            if self.p + 1 >= len(self.tokens):
+                return buffer
+            self.p += 1
+        self.print_window()
+        print("PARSE WHITE SPACE", len(buffer))
+        return buffer
+
     def parse_start_tag(self, keep_ws=False):
         print("PARSE START TAG")
-        # WS* "<" character* ["/"] ">"
-        # WHITE SPACE *
+        # SELF_CLOSING_TAG: "<" text "/" ">"
+        # START_TAG: "<" text ">"
+
         buffer = []
-        while self.tokens[self.p].ch != "<":
-            buffer.append(self.tokens[self.p])
-            self.p += 1
-        # "<"
+        assert (
+            self.tokens[self.p].ch == "<"
+        ), f"Expected '<' @ {self.p} {self.get_window()}"
         buffer.append(self.tokens[self.p])
         self.p += 1
 
@@ -62,8 +78,13 @@ class Debugger:
             self.p += 1
 
         # ">"
+        assert (
+            self.tokens[self.p].ch == ">"
+        ), f"Expected '<' @ {self.p} {self.get_window()}"
+
         buffer.append(self.tokens[self.p])
         self.p += 1
+        buffer.extend(self.parse_white_space())
         self.print_buffer(buffer)
         self.print_window()
         print("END PARSE START TAG\n\n")
@@ -71,7 +92,7 @@ class Debugger:
 
     def parse_end_tag(self):
         print("PARSE END TAG")
-        # "<" WS* "/" character* ">"
+        # END_TAG: "<" "/" text ">"
         buffer = []
         buffer.append(self.tokens[self.p])
         self.p += 1
@@ -81,12 +102,10 @@ class Debugger:
         # ">"
         buffer.append(self.tokens[self.p])
         self.p += 1
-        # Get rid of extra whitespace
-        while self.tokens[self.p + 1].ch != "<":
-            buffer.append(self.tokens[self.p])
-            self.p += 1
+
         self.print_buffer(buffer)
         self.print_window()
+
         print("END PARSE END TAG\n\n")
         return buffer
 
@@ -94,33 +113,34 @@ class Debugger:
         # Check if there is another element
         p = self.p
 
-        if p + 1 >= len(self.tokens):
-            return "eof"
-
         while self.tokens[p].ch != "<":
-            if p + 1 >= len(self.tokens):
-                return "eof"
             p += 1
 
         # self.tokens[p] == "<"
         p += 1
 
-        while self.tokens[p] == " ":
+        while self.tokens[p].ch == " ":
             p += 1
 
-        if self.tokens[p] == "/":
+        print("Next Tag Type:", self.tokens[p].ch)
+        if self.tokens[p].ch == "/":
             return "end"
         else:
             return "start"
 
     def parse_element(self):
         print("PARSE ELEMENT")
-        # start_tag [ (element* or character*) end_tag ] [END]
+        # ELEMENT: (WS* SELF_CLOSING_TAG WS*) | (WS* START_TAG WS* (text | ELEMENT*) END_TAG WS*)
 
         # start_tag
         buffer = []
+
+        buffer.extend(self.parse_white_space())
+
         start_tag_buffer, self_closing = self.parse_start_tag()
         buffer.extend(start_tag_buffer)
+
+        buffer.extend(self.parse_white_space())
 
         if self_closing:
             symbol = (
@@ -141,7 +161,7 @@ class Debugger:
             print("END PARSE ELEMENT\n\n")
             return buffer
 
-        injection_point = self.p
+        injection_point = p
         # [  (element* or character*)
         # Check if it's going to be elements
         is_element = True
@@ -158,23 +178,30 @@ class Debugger:
             # element *
             while self.next_tag_type() == "start":
                 print("RECURSING")
+                self.print_window()
                 child_buffer = self.parse_element()
                 buffer.extend(child_buffer)
-                print("BACK TO MAIN")
 
                 self.print_buffer(buffer)
                 self.print_window()
-                self.p += 1
+                print("BACK TO MAIN\n")
+                # input("NEXT: ")
         else:
             # character *
+            a = self.p
             while self.tokens[self.p].ch != "<":
                 buffer.append(self.tokens[self.p])
                 self.p += 1
+            b = self.p
+            print("TEXT:", "".join([t.ch for t in self.tokens[a:b]]))
 
         print("PARSE ELEMENT :: END PARSE CHILDREN\n")
+        buffer.extend(self.parse_white_space())
         # end_tag
         end_buffer = self.parse_end_tag()
         buffer.extend(end_buffer)
+
+        buffer.extend(self.parse_white_space())
         print("END PARSE ELEMENT\n\n")
 
         symbol = f"\n╔ Element @ Line {buffer[0].line}, Col {buffer[0].col}\n"
@@ -190,10 +217,18 @@ class Debugger:
         print("New Symbol", symbol)
         return buffer
 
+    def parse_document(self):
+        print("PARSE DOCUMENT")
+        # DOCUMENT: ELEMENT eof
+        buffer = self.parse_element()
+        self.print_window()
+        assert self.tokens[self.p].ch == "EOF"
+        return buffer
+
 
 with open("./calculator.xml", "r") as f:
     d = Debugger(f.read())
-    d.parse_element()
+    d.parse_document()
     print(d.symbols)
     previous = 0
     buffer = []
