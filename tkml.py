@@ -513,7 +513,8 @@ class TKMLWidgetBuilder:
             column_index = 0
             for child in row:
                 layout_attributes = pull_layout_attributes(child)
-                child_widget = self._handle_any(master, child, parent)
+                if child.tag != "Empty":
+                    child_widget = self._handle_any(master, child, parent)
 
                 if child_widget is None or child.tag == "Toplevel":
                     # We must skip things which can't be packed.
@@ -548,9 +549,10 @@ class TKMLWidgetBuilder:
                         occupied[(x, y)] = True
 
                 # pack the child_widget
-                child_widget.grid(
-                    row=row_index, column=column_index, **layout_attributes
-                )
+                if child.tag != "Empty":
+                    child_widget.grid(
+                        row=row_index, column=column_index, **layout_attributes
+                    )
                 column_max = max(column_max, column_index)
                 row_max = max(row_max, row_index)
 
