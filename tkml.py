@@ -194,7 +194,8 @@ def make_call(master: TKMLDriver, function_name: str) -> callable:
         func = getattr(master, function_name)
         if not callable(func):
             raise TKMLRuntimeError(
-                f"Attempted to call undefined function [{function_name}]. Make sure that function is defined by the master widget."
+                f"Attempted to call undefined function [{function_name}].\n"
+                + "Make sure that function is defined by the master widget."
             )
         func()
 
@@ -416,7 +417,7 @@ class TKMLWidgetBuilder:
         node.attrib.pop("options")
         textvariable = node.attrib.pop("textvariable")
         textvariable.set(options[0])
-        widget = ttk.OptionMenu[node.tag](
+        widget = ttk.OptionMenu(
             parent, textvariable, options[0], *options, **node.attrib
         )
         if id_ is not None:
@@ -506,14 +507,13 @@ class TKMLWidgetBuilder:
                 continue
             elif row.tag != "Row":
                 raise TKMLInvalidElement(
-                    "Found Terminal or Branching Element [{row.tag}] as direct child of a Grid-Layouted Branching Element"
+                    f"Found Terminal or Branching Element [{row.tag}] as direct child of a Grid-Layouted Branching Element"
                 )
 
             column_index = 0
             for child in row:
                 layout_attributes = pull_layout_attributes(child)
-                if child.tag != "Empty":
-                    child_widget = self._handle_any(master, child, parent)
+                child_widget = self._handle_any(master, child, parent)
 
                 if child_widget is None or child.tag == "Toplevel":
                     # We must skip things which can't be packed.
@@ -547,11 +547,10 @@ class TKMLWidgetBuilder:
                     for y in range(row_index, row_index + rowspan):
                         occupied[(x, y)] = True
 
-                if child.tag != "Empty":
-                    # pack the child_widget
-                    child_widget.grid(
-                        row=row_index, column=column_index, **layout_attributes
-                    )
+                # pack the child_widget
+                child_widget.grid(
+                    row=row_index, column=column_index, **layout_attributes
+                )
                 column_max = max(column_max, column_index)
                 row_max = max(row_max, row_index)
 
