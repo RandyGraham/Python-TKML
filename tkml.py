@@ -84,6 +84,66 @@ def parse_dict(text: str) -> dict:
     dprint(f"Parse Dict {text} -> {dict_}")
     return dict_
 
+# Credit: crxguy52, Stevoisiak, vegaseat, Victor Zaccardo @ https://stackoverflow.com/a/36221216
+class CreateToolTip(object):
+    """
+    create a tooltip for a given widget
+    """
+
+    def __init__(self, widget, text="widget info"):
+        self.waittime = 500  # miliseconds
+        self.wraplength = 180  # pixels
+        self.widget = widget
+        self.text = text
+        self.widget.bind("<Enter>", self.enter)
+        self.widget.bind("<Leave>", self.leave)
+        self.widget.bind("<ButtonPress>", self.leave)
+        self.id = None
+        self.tw = None
+
+    def enter(self, event=None):
+        self.schedule()
+
+    def leave(self, event=None):
+        self.unschedule()
+        self.hidetip()
+
+    def schedule(self):
+        self.unschedule()
+        self.id = self.widget.after(self.waittime, self.showtip)
+
+    def unschedule(self):
+        id = self.id
+        self.id = None
+        if id:
+            self.widget.after_cancel(id)
+
+    def showtip(self, event=None):
+        x = y = 0
+        x, y, cx, cy = self.widget.bbox("insert")
+        x += self.widget.winfo_rootx() + 25
+        y += self.widget.winfo_rooty() + 20
+        # creates a toplevel window
+        self.tw = tk.Toplevel(self.widget)
+        # Leaves only the label and removes the app window
+        self.tw.wm_overrideredirect(True)
+        self.tw.wm_geometry("+%d+%d" % (x, y))
+        label = tk.Label(
+            self.tw,
+            text=self.text,
+            justify="left",
+            background="#ffffff",
+            relief="solid",
+            borderwidth=1,
+            wraplength=self.wraplength,
+        )
+        label.pack(ipadx=1)
+
+    def hidetip(self):
+        tw = self.tw
+        self.tw = None
+        if tw:
+            tw.destroy()
 
 """
 This Sortable treeview class was made by Remi Hassan
@@ -285,6 +345,11 @@ def get_id(node: xmlET.Element) -> str | None:
     else:
         return None
 
+def get_tooltip(node: xmlET.Element) -> str | None:
+    if "tooltip" in node.attrib:
+        return node.attrib.pop("tooltip")
+    else:
+        return None
 
 class TKMLWidgetBuilder:
     def __init__(self, print_debug=True, parser=None):
@@ -406,6 +471,7 @@ class TKMLWidgetBuilder:
         patch_attributes(master, node)
 
         id_ = get_id(node)
+        tooltip = get_tooltip(node)
 
         if "options" not in node.attrib:
             raise TKMLMalformedElement(f"OptionMenu must have options value")
@@ -420,9 +486,12 @@ class TKMLWidgetBuilder:
         widget = ttk.OptionMenu(
             parent, textvariable, options[0], *options, **node.attrib
         )
+        if tooltip is not None:
+            CreateToolTip(widget, tooltip)
+
         if id_ is not None:
             master._tkml_variables[id_] = widget
-
+        
         return widget
 
     def _handle_terminal(
@@ -434,8 +503,12 @@ class TKMLWidgetBuilder:
         patch_attributes(master, node)
 
         id_ = get_id(node)
+        tooltip = get_tooltip(node)
 
         widget = widget_type(parent, **node.attrib)
+
+        if tooltip is not None:
+            CreateToolTip(widget, tooltip)
 
         if id_ is not None:
             master._tkml_variables[id_] = widget

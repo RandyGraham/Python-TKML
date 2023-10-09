@@ -4,7 +4,7 @@
     <Label text="The Donut!" />
     <Frame layout="Grid" rowweight="1" columnweight="1">
         <Row>
-            <Button text="A"/>
+            <Button text="A" tooltip="Clicking this button will not do anything"/>
             <Button text="B"/>
             <Button text="C"/>
             <Button text="D"/>
