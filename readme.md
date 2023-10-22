@@ -370,7 +370,35 @@ table.pack(expand=1, fill="both")
 h_scrollbar.pack(fill="x")
 parent.pack()
 ```
+##### ToggleFrame
+```xml
+<ToggleFrame id="Frame">
+...
+</ToggleFrame>
+```
+
+The ToggleFrame is a special variant of frame which has the enable() and disable() method. The ToggleFrame is compatible with the `set_toggle` virtual method. It is otherwise Identical to a regular frame.
+
 _For more examples -- including examples about adding your own custom widgets, layouts, and commands -- please refer to the [Examples](https://github.com/RandyGraham/Python-TKML/tree/main/Examples)_
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
+
+## Virtual Methods
+Virtual methods allow the command parameter to be set to a function which is created dynamically at parse time. As of right now you can only choose from a predefinied selection. To declare you are using a virtual method prepend a '@' to the start of your command name.
+
+```xml
+<Int id=toggle_variable>
+<CheckButton text="Enable" variable="toggle_variable" command="@name=set_toggle; widget=my_toggle_widget; variable=toggle_variable; onvalue=1; offvalue=0;">
+<ToggleFrame id="my_toggle_widget">
+    <Label text="This is will be disabled when"/>
+</ToggleFrame>
+```
+### set_toggle
+Parameters
+| name | widget | variable | onvalue | offvalue |
+| ---- | ------ | -------- | ------- | -------- |
+| set_toggle | The ID of the widget you'd like to toggle | The ID of the variable you'd like to check | What value of the variable should enable the widget | What value of the variable should disable the widget |
+
+#### More Virutal Methods Coming...
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
