@@ -435,5 +435,6 @@ Distributed under the MIT License. See `LICENSE.txt` for more information.
 ## Acknowledgments
 
 * SortedTreeview from [Remi Hassan](https://stackoverflow.com/users/6424190/rami-hassan)
+* ToggleFrame based on work from [Mario Camilleri](https://stackoverflow.com/users/10309040/mario-camilleri)
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
