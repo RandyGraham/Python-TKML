@@ -11,7 +11,7 @@ from functools import partial
 import xml.etree.ElementTree as xmlET
 import datetime
 import uuid
-from string import ascii_letters
+from math import inf
 
 DEBUG = False
 
@@ -84,66 +84,26 @@ def parse_dict(text: str) -> dict:
     dprint(f"Parse Dict {text} -> {dict_}")
     return dict_
 
-# Credit: crxguy52, Stevoisiak, vegaseat, Victor Zaccardo @ https://stackoverflow.com/a/36221216
-class CreateToolTip(object):
-    """
-    create a tooltip for a given widget
-    """
+"""
+Based on work by Mario Camilleri
+https://stackoverflow.com/a/52152773
+"""
+class ToggleFrame(ttk.Frame):
+    def enable(self, state='!disabled'):
+        def cstate(widget):
+            # Is this widget a container?
+            if widget.winfo_children:
+                # It's a container, so iterate through its children
+                for w in widget.winfo_children():
+                    # change its state
+                    w.state((state,))
+                    # and then recurse to process ITS children
+                    cstate(w)
 
-    def __init__(self, widget, text="widget info"):
-        self.waittime = 500  # miliseconds
-        self.wraplength = 180  # pixels
-        self.widget = widget
-        self.text = text
-        self.widget.bind("<Enter>", self.enter)
-        self.widget.bind("<Leave>", self.leave)
-        self.widget.bind("<ButtonPress>", self.leave)
-        self.id = None
-        self.tw = None
+        cstate(self)
 
-    def enter(self, event=None):
-        self.schedule()
-
-    def leave(self, event=None):
-        self.unschedule()
-        self.hidetip()
-
-    def schedule(self):
-        self.unschedule()
-        self.id = self.widget.after(self.waittime, self.showtip)
-
-    def unschedule(self):
-        id = self.id
-        self.id = None
-        if id:
-            self.widget.after_cancel(id)
-
-    def showtip(self, event=None):
-        x = y = 0
-        x, y, cx, cy = self.widget.bbox("insert")
-        x += self.widget.winfo_rootx() + 25
-        y += self.widget.winfo_rooty() + 20
-        # creates a toplevel window
-        self.tw = tk.Toplevel(self.widget)
-        # Leaves only the label and removes the app window
-        self.tw.wm_overrideredirect(True)
-        self.tw.wm_geometry("+%d+%d" % (x, y))
-        label = tk.Label(
-            self.tw,
-            text=self.text,
-            justify="left",
-            background="#ffffff",
-            relief="solid",
-            borderwidth=1,
-            wraplength=self.wraplength,
-        )
-        label.pack(ipadx=1)
-
-    def hidetip(self):
-        tw = self.tw
-        self.tw = None
-        if tw:
-            tw.destroy()
+    def disable(self):
+        self.enable('disabled')
 
 """
 This Sortable treeview class was made by Remi Hassan
@@ -219,10 +179,16 @@ class TKMLDriver(ttk.Frame):
     Contains special variables which the xml transformer depends on
     """
 
-    def __init__(self, parent):
+    def __init__(self, parent, **kwargs):
         super().__init__(parent)
-        self._tkml_variables = {}
+        self._tkml_variables = kwargs
         self._widget_tree = None
+        self.on_init = []
+
+    def _tkml_init(self):
+        for i in self.on_init:
+            i()
+        self.on_init.clear()
 
     def __getitem__(self, key):
         return self._tkml_variables[key]
@@ -234,13 +200,18 @@ class TKMLTopLevelDriver(tk.Toplevel):
     Contains special variables which the xml transformer depends on
     """
 
-    def __init__(self):
+    def __init__(self, **kwargs):
         super().__init__()
-        self._tkml_variables = {}
+        self._tkml_variables = kwargs
         self._widget_tree = None
+        self._on_init = []
 
     def __getitem__(self, key):
         return self._tkml_variables[key]
+    
+    def _tkml_init(self):
+        for i in self._on_init:
+            i()
 
     def close(self):
         if "_tkml_on_close" in self._tkml_variables:
@@ -261,6 +232,27 @@ def make_call(master: TKMLDriver, function_name: str) -> callable:
 
     return _call
 
+def virtual_method(master: TKMLDriver, function: str) -> callable:
+    
+    function_data = parse_dict(function)
+    print("making virtual method", function_data)
+    function_name = function_data["name"]
+    if function_name == "set_toggle":
+        widget = function_data["widget"]
+        variable = function_data["variable"]
+        onvalue = function_data["onvalue"]
+        offvalue = function_data["offvalue"]
+        def _call(*args):
+            print("calling virtual method: toggle")
+            if master._tkml_variables[variable].get() == onvalue:
+                master._tkml_variables[widget].enable()
+            elif master._tkml_variables[variable].get() == offvalue:
+                master._tkml_variables[widget].disable()
+        #update the frame on init
+        master._on_init.append(_call)
+        return _call
+    else:
+        raise TKMLInvalidElement("Unrecognized Virtual Method", function)
 
 def lookup(master: TKMLDriver, id_: int):
     return master._tkml_variables[id_]
@@ -313,12 +305,22 @@ def patch_attributes(master: TKMLDriver, node: xmlET.Element):
             continue
         if node.attrib[attribute].isdigit():
             node.attrib[attribute] = int(node.attrib[attribute])
+        elif node.attrib[attribute] == "MATH_INF":
+            node.attrib[attribute] = inf
+        elif node.attrib[attribute] == "-MATH_INF":
+            node.attrib[attribute] = -inf
 
     if "command" in node.attrib:
-        node.attrib["command"] = make_call(master, node.attrib["command"])
+        if node.attrib["command"].startswith("@"): #Virtual Method
+            node.attrib["command"] = virtual_method(master, node.attrib["command"][1:])
+        else:
+            node.attrib["command"] = make_call(master, node.attrib["command"])
 
     if "textvariable" in node.attrib:
         node.attrib["textvariable"] = lookup(master, node.attrib["textvariable"])
+
+    if "variable" in node.attrib:
+        node.attrib["variable"] = lookup(master, node.attrib["variable"])
 
     if "columns" in node.attrib:
         node.attrib["columns"] = parse_list(node.attrib["columns"])
@@ -345,11 +347,6 @@ def get_id(node: xmlET.Element) -> str | None:
     else:
         return None
 
-def get_tooltip(node: xmlET.Element) -> str | None:
-    if "tooltip" in node.attrib:
-        return node.attrib.pop("tooltip")
-    else:
-        return None
 
 class TKMLWidgetBuilder:
     def __init__(self, print_debug=True, parser=None):
@@ -405,6 +402,9 @@ class TKMLWidgetBuilder:
             ),
             "Frame": lambda master, node, parent: self._handle_branching(
                 master, node, parent, ttk.Frame
+            ),
+            "ToggleFrame": lambda master, node, parent: self._handle_branching(
+                master, node, parent, ToggleFrame
             ),
             "Notebook": self._handle_notebook,
             "Toplevel": lambda master, node, parent: self._handle_toplevel(
@@ -471,7 +471,6 @@ class TKMLWidgetBuilder:
         patch_attributes(master, node)
 
         id_ = get_id(node)
-        tooltip = get_tooltip(node)
 
         if "options" not in node.attrib:
             raise TKMLMalformedElement(f"OptionMenu must have options value")
@@ -486,12 +485,9 @@ class TKMLWidgetBuilder:
         widget = ttk.OptionMenu(
             parent, textvariable, options[0], *options, **node.attrib
         )
-        if tooltip is not None:
-            CreateToolTip(widget, tooltip)
-
         if id_ is not None:
             master._tkml_variables[id_] = widget
-        
+
         return widget
 
     def _handle_terminal(
@@ -503,15 +499,14 @@ class TKMLWidgetBuilder:
         patch_attributes(master, node)
 
         id_ = get_id(node)
-        tooltip = get_tooltip(node)
 
         widget = widget_type(parent, **node.attrib)
 
-        if tooltip is not None:
-            CreateToolTip(widget, tooltip)
-
         if id_ is not None:
             master._tkml_variables[id_] = widget
+
+        if node.tag == "Checkbutton":
+            widget.state(["!alternate"])
 
         return widget
 
@@ -546,6 +541,7 @@ class TKMLWidgetBuilder:
 
         elif node.tag == "Int":
             id_ = node.attrib.pop("id")
+            print(node.attrib)
             master._tkml_variables[id_] = tk.IntVar(**node.attrib)
 
         elif node.tag == "Style":
@@ -586,8 +582,7 @@ class TKMLWidgetBuilder:
             column_index = 0
             for child in row:
                 layout_attributes = pull_layout_attributes(child)
-                if child.tag != "Empty":
-                    child_widget = self._handle_any(master, child, parent)
+                child_widget = self._handle_any(master, child, parent)
 
                 if child_widget is None or child.tag == "Toplevel":
                     # We must skip things which can't be packed.
@@ -622,10 +617,9 @@ class TKMLWidgetBuilder:
                         occupied[(x, y)] = True
 
                 # pack the child_widget
-                if child.tag != "Empty":
-                    child_widget.grid(
-                        row=row_index, column=column_index, **layout_attributes
-                    )
+                child_widget.grid(
+                    row=row_index, column=column_index, **layout_attributes
+                )
                 column_max = max(column_max, column_index)
                 row_max = max(row_max, row_index)
 
@@ -738,6 +732,10 @@ class TKMLWidgetBuilder:
         if root_widget is None or xml_root.tag == "Toplevel":
             return
         root_widget.pack(**layout_attributes)
+        master._tkml_init()
+        if hasattr(master, "init"):
+            master.init()
+
 
     def build_tkml_from_file(self, master: TKMLDriver, filepath: str):
         self.build_tkml(master, xmlET.parse(filepath, self.parser).getroot())
