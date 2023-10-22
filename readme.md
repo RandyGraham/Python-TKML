@@ -383,7 +383,7 @@ _For more examples -- including examples about adding your own custom widgets, l
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 ## Virtual Methods
-Virtual methods allow the command parameter to be set to a function which is created dynamically at parse time. As of right now you can only choose from a predefinied selection. To declare you are using a virtual method prepend a '@' to the start of your command name.
+Virtual methods allow the command parameter to be set to a function which is created dynamically at build time. As of right now you can only choose from a predefinied selection. To declare you are using a virtual method prepend a '@' to the start of your command name.
 
 ```xml
 <Int id=toggle_variable>
