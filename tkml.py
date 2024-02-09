@@ -18,7 +18,9 @@ DEBUG = False
 if DEBUG:
     dprint = print
 else:
-    dprint = lambda *args, **kwargs: None
+
+    def dprint(*args, **kwargs):
+        return None
 
 
 class TKMLInvalidElement(Exception):
@@ -84,12 +86,15 @@ def parse_dict(text: str) -> dict:
     dprint(f"Parse Dict {text} -> {dict_}")
     return dict_
 
+
 """
 Based on work by Mario Camilleri
 https://stackoverflow.com/a/52152773
 """
+
+
 class ToggleFrame(ttk.Frame):
-    def enable(self, state='!disabled'):
+    def enable(self, state="!disabled"):
         def cstate(widget):
             # Is this widget a container?
             if widget.winfo_children:
@@ -103,7 +108,8 @@ class ToggleFrame(ttk.Frame):
         cstate(self)
 
     def disable(self):
-        self.enable('disabled')
+        self.enable("disabled")
+
 
 """
 This Sortable treeview class was made by Remi Hassan
@@ -121,9 +127,9 @@ class SortableTreeview(ttk.Treeview):
         return super().heading(column, **kwargs)
 
     def _sort(self, column, reverse, data_type, callback):
-        l = [(self.set(k, column), k) for k in self.get_children("")]
-        l.sort(key=lambda t: data_type(t[0]), reverse=reverse)
-        for index, (_, k) in enumerate(l):
+        list_ = [(self.set(k, column), k) for k in self.get_children("")]
+        list_.sort(key=lambda t: data_type(t[0]), reverse=reverse)
+        for index, (_, k) in enumerate(list_):
             self.move(k, "", index)
         self.heading(column, command=partial(callback, column, not reverse))
 
@@ -163,6 +169,9 @@ class TKMLTreeView(ttk.Frame):
         self.treeview.pack(expand=1, fill="both")
 
         self.h_scrollbar.pack(fill="x")
+
+    def bind(self, *args, **kwargs):
+        self.treeview.bind(*args, **kwargs)
 
     def __getattr__(self, name):
         # Pass all calls to the treeview
@@ -208,7 +217,7 @@ class TKMLTopLevelDriver(tk.Toplevel):
 
     def __getitem__(self, key):
         return self._tkml_variables[key]
-    
+
     def _tkml_init(self):
         for i in self._on_init:
             i()
@@ -232,8 +241,8 @@ def make_call(master: TKMLDriver, function_name: str) -> callable:
 
     return _call
 
+
 def virtual_method(master: TKMLDriver, function: str) -> callable:
-    
     function_data = parse_dict(function)
     print("making virtual method", function_data)
     function_name = function_data["name"]
@@ -242,17 +251,20 @@ def virtual_method(master: TKMLDriver, function: str) -> callable:
         variable = function_data["variable"]
         onvalue = function_data["onvalue"]
         offvalue = function_data["offvalue"]
+
         def _call(*args):
             print("calling virtual method: toggle")
             if master._tkml_variables[variable].get() == onvalue:
                 master._tkml_variables[widget].enable()
             elif master._tkml_variables[variable].get() == offvalue:
                 master._tkml_variables[widget].disable()
-        #update the frame on init
+
+        # update the frame on init
         master._on_init.append(_call)
         return _call
     else:
         raise TKMLInvalidElement("Unrecognized Virtual Method", function)
+
 
 def lookup(master: TKMLDriver, id_: int):
     return master._tkml_variables[id_]
@@ -311,7 +323,7 @@ def patch_attributes(master: TKMLDriver, node: xmlET.Element):
             node.attrib[attribute] = -inf
 
     if "command" in node.attrib:
-        if node.attrib["command"].startswith("@"): #Virtual Method
+        if node.attrib["command"].startswith("@"):  # Virtual Method
             node.attrib["command"] = virtual_method(master, node.attrib["command"][1:])
         else:
             node.attrib["command"] = make_call(master, node.attrib["command"])
@@ -421,10 +433,10 @@ class TKMLWidgetBuilder:
         self.parser = parser
 
     def add_terminal(self, widget_name, widget):
-        self.terminals[
-            widget_name
-        ] = lambda master, node, parent: self._handle_terminal(
-            master, node, parent, widget
+        self.terminals[widget_name] = (
+            lambda master, node, parent: self._handle_terminal(
+                master, node, parent, widget
+            )
         )
 
     def add_command(self, command_name, command):
@@ -433,10 +445,10 @@ class TKMLWidgetBuilder:
         )
 
     def add_branching(self, widget_name, widget):
-        self.branching[
-            widget_name
-        ] = lambda master, node, parent: self._handle_branching(
-            master, node, parent, widget
+        self.branching[widget_name] = (
+            lambda master, node, parent: self._handle_branching(
+                master, node, parent, widget
+            )
         )
 
     def add_layout(self, layout_type, function):
@@ -473,10 +485,10 @@ class TKMLWidgetBuilder:
         id_ = get_id(node)
 
         if "options" not in node.attrib:
-            raise TKMLMalformedElement(f"OptionMenu must have options value")
+            raise TKMLMalformedElement("OptionMenu must have options value")
 
         if "textvariable" not in node.attrib:
-            raise TKMLMalformedElement(f"OptionMenu must have textvariable")
+            raise TKMLMalformedElement("OptionMenu must have textvariable")
 
         options = parse_list(node.attrib["options"])
         node.attrib.pop("options")
@@ -735,7 +747,6 @@ class TKMLWidgetBuilder:
         master._tkml_init()
         if hasattr(master, "init"):
             master.init()
-
 
     def build_tkml_from_file(self, master: TKMLDriver, filepath: str):
         self.build_tkml(master, xmlET.parse(filepath, self.parser).getroot())
