@@ -18,7 +18,6 @@ DEBUG = False
 if DEBUG:
     dprint = print
 else:
-
     def dprint(*args, **kwargs):
         return None
 
@@ -373,13 +372,14 @@ def patch_attributes(master: TKMLDriver, node: xmlET.Element):
     """Convert the node's attributes inplace"""
     # Autoconvert numbers
     for attribute in node.attrib:
-        # Escape numbers
+        # Escape numbers if the start with '/'
         if (
             node.attrib[attribute].startswith("/")
             and node.attrib[attribute][1:].isdigit()
         ):
             node.attrib[attribute] = node.attrib[attribute][1:]
             continue
+        # Convert digits into numbers
         if node.attrib[attribute].isdigit():
             node.attrib[attribute] = int(node.attrib[attribute])
         elif node.attrib[attribute] == "MATH_INF":
