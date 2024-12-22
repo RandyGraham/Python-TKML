@@ -1,5 +1,5 @@
 """
-A Single-File Library for Using XML to layout TKinter
+A Single-File Library for Using XML to build TKinter applications
 """
 
 __version__ = "1.0.0"
@@ -427,70 +427,52 @@ def get_id(node: xmlET.Element) -> str | None:
 
 class TKMLWidgetBuilder:
     def __init__(self, print_debug=True, parser=None):
+        def make_handle_terminal(widget):
+            return lambda master, node, parent: self._handle_terminal(master, node, parent, widget)
+        
+        def make_handle_branching(widget):
+            return lambda master, node, parent: self._handle_branching(master, node, parent, widget)
+        
         self.terminals = {
-            "Label": lambda master, node, parent: self._handle_terminal(
-                master, node, parent, ttk.Label
-            ),
-            "Button": lambda master, node, parent: self._handle_terminal(
-                master, node, parent, ttk.Button
-            ),
-            "Entry": lambda master, node, parent: self._handle_terminal(
-                master, node, parent, ttk.Entry
-            ),
-            "Text": lambda master, node, parent: self._handle_terminal(
-                master, node, parent, tk.Text
-            ),
-            "Checkbutton": lambda master, node, parent: self._handle_terminal(
-                master, node, parent, ttk.Checkbutton
-            ),
-            "Radiobutton": lambda master, node, parent: self._handle_terminal(
-                master, node, parent, ttk.Radiobutton
-            ),
-            "Spinbox": lambda master, node, parent: self._handle_terminal(
-                master, node, parent, ttk.Spinbox
-            ),
-            "Combobox": lambda master, node, parent: self._handle_terminal(
-                master, node, parent, ttk.Combobox
-            ),
-            "Scale": lambda master, node, parent: self._handle_terminal(
-                master, node, parent, ttk.Scale
-            ),
+            "Label":       make_handle_terminal(ttk.Label),
+            "Button":      make_handle_terminal(ttk.Button),
+            "Entry":       make_handle_terminal(ttk.Entry),
+            "Text":        make_handle_terminal(tk.Text),
+            "Checkbutton": make_handle_terminal(ttk.Checkbutton),
+            "Radiobutton": make_handle_terminal(ttk.Radiobutton),
+            "Spinbox":     make_handle_terminal(ttk.Spinbox),
+            "Combobox":    make_handle_terminal(ttk.Combobox),
+            "Scale":       make_handle_terminal(ttk.Scale),
             # Special Items
-            "Table": self._handle_terminal_table,
-            "OptionMenu": self._handle_terminal_optionmenu,
+            "Table":       self._handle_terminal_table,
+            "OptionMenu":  self._handle_terminal_optionmenu,
         }
         self.commands = {
-            "RowConfigure": self._handle_command,
+            "RowConfigure":    self._handle_command,
             "ColumnConfigure": self._handle_command,
-            "Heading": self._handle_command,
-            "Column": self._handle_command,
-            "Bind": self._handle_command,
-            "String": self._handle_command,
-            "Int": self._handle_command,
-            "Style": self._handle_command,
-            "PhotoImage": self._handle_command,
-            "Title": self._handle_command,
-            "GetVar": self._handle_command,
-            "Geometry": self._handle_command,
+            "Heading":         self._handle_command,
+            "Column":          self._handle_command,
+            "Bind":            self._handle_command,
+            "String":          self._handle_command,
+            "Int":             self._handle_command,
+            "Style":           self._handle_command,
+            "PhotoImage":      self._handle_command,
+            "Title":           self._handle_command,
+            "GetVar":          self._handle_command,
+            "Geometry":        self._handle_command,
         }
         self.branching = {
-            "LabelFrame": lambda master, node, parent: self._handle_branching(
-                master, node, parent, ttk.LabelFrame
-            ),
-            "Frame": lambda master, node, parent: self._handle_branching(
-                master, node, parent, ttk.Frame
-            ),
-            "ToggleFrame": lambda master, node, parent: self._handle_branching(
-                master, node, parent, ToggleFrame
-            ),
-            "Notebook": self._handle_notebook,
+            "LabelFrame":  make_handle_branching(ttk.LabelFrame),
+            "Frame":       make_handle_branching(ttk.Frame),
+            "ToggleFrame": make_handle_branching(ToggleFrame),
+            "Notebook":    self._handle_notebook,
             "Toplevel": lambda master, node, parent: self._handle_toplevel(
                 master, node, parent, ttk.Toplevel
             ),
         }
         self.layouts = {
-            "V": self._layout_V,
-            "H": self._layout_H,
+            "V":    self._layout_V,
+            "H":    self._layout_H,
             "Grid": self._layout_Grid,
         }
 
