@@ -31,19 +31,20 @@ class TKMLMalformedElement(Exception):
 
 
 def parse_list(text: str) -> list:
-    """Take a list of comma seperated values and convert it to a list
+    """
+    Take a list of comma seperated values and convert it to a list
 
     values are auto-converted to int if they don't contain letters
     """
-    return [
-        int(stripped_value) if stripped_value.isdigit() else stripped_value
-        for stripped_value in [value.strip(" ") for value in text.split(",")]
-    ]
+    stripped_values = (value.strip(" ") for value in text.split(" "))
+    converted_values = [(int(value) if value.isdigit() else value) for value in stripped_values]
+    return converted_values
 
 
 def parse_dict(text: str) -> dict:
-    """Take a list of comma seperated values and convert it to a dict
-
+    """
+    Take a list of comma seperated values and convert it to a dict.
+    Ignores extra whitespace
     Text is formatted like this "key = value; key2 = value2;"
     """
     dict_ = {}
@@ -51,8 +52,8 @@ def parse_dict(text: str) -> dict:
     valuebuffer = ""
     c_buffer = "key"
     for ch in text:
-        if ch == ";":
-            if "," in valuebuffer:
+        if ch == ";": #We arrived at the end of the value
+            if "," in valuebuffer: #The value is a list
                 dict_[keybuffer] = parse_list(valuebuffer)
             else:
                 if valuebuffer.isdigit():
@@ -73,6 +74,8 @@ def parse_dict(text: str) -> dict:
 
         if ch == " " and ignoring_spaces_until_letter:
             continue
+
+        #We've reached a significant character
         ignoring_spaces_until_letter = False
         if c_buffer == "key":
             keybuffer += ch
@@ -87,14 +90,13 @@ Based on work by Mario Camilleri
 https://stackoverflow.com/a/52152773
 """
 
-
 def make_call(master: TKMLDriver, function_name: str) -> callable:
     def _call():
         func = getattr(master, function_name)
         if not callable(func):
             raise TKMLRuntimeError(
                 f"Attempted to call undefined function [{function_name}].\n"
-                + "Make sure that function is defined by the master widget."
+                "Make sure that function is defined by the master widget."
             )
         func()
 
@@ -103,8 +105,11 @@ def make_call(master: TKMLDriver, function_name: str) -> callable:
 
 def virtual_method(master: TKMLDriver, function: str) -> callable:
     function_data = parse_dict(function)
+
     print("making virtual method", function_data)
+
     function_name = function_data["name"]
+
     if function_name == "set_toggle":
         widget = function_data["widget"]
         variable = function_data["variable"]
@@ -169,7 +174,7 @@ def get_tooltip(node: xmlET.Element) -> str | None:
         return None
 
 def patch_attributes(master: TKMLDriver, node: xmlET.Element):
-    """Convert the node's attributes inplace"""
+    """Convert the node's attributes to python values inplace"""
     # Autoconvert numbers
     for attribute in node.attrib:
         # Escape numbers if the start with '/'
@@ -182,8 +187,10 @@ def patch_attributes(master: TKMLDriver, node: xmlET.Element):
         # Convert digits into numbers
         if node.attrib[attribute].isdigit():
             node.attrib[attribute] = int(node.attrib[attribute])
+
         elif node.attrib[attribute] == "MATH_INF":
             node.attrib[attribute] = inf
+            
         elif node.attrib[attribute] == "-MATH_INF":
             node.attrib[attribute] = -inf
 
@@ -366,6 +373,7 @@ class TKMLWidgetBuilder:
             master._tkml_variables[id_] = widget
 
         if node.tag == "Checkbutton":
+            # Fix for checkbutton not working right
             widget.state(["!alternate"])
 
         if tooltip is not None:

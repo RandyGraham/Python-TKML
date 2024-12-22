@@ -148,5 +148,4 @@ class TKMLTreeView(ttk.Frame):
         if name == "treeview":
             # If this is not here it will recur infinitely
             raise AttributeError()
-        if hasattr(self.treeview, name):
-            return getattr(self.treeview, name)
+        return getattr(self.treeview, name, None)
