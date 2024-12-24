@@ -30,12 +30,6 @@ class TKMLRuntimeError(Exception):
 class TKMLMalformedElement(Exception):
     pass
 
-
-"""
-Based on work by Mario Camilleri
-https://stackoverflow.com/a/52152773
-"""
-
 def make_call(master: TKMLDriver, function_name: str) -> callable:
     def _call():
         func = getattr(master, function_name)
@@ -571,6 +565,8 @@ class TKMLWidgetBuilder:
 class TKMLWidget():
     def __init__(self, filepath, parser=None):
         self.filepath = filepath
+        # Hopefully this makes it a bit more efficient to instantiate
+        # by storing the already parsed xml
         self.xml = xmlET.parse(filepath, parser).getroot()
         self.builder = TKMLWidgetBuilder()
 

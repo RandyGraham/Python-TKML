@@ -1,4 +1,5 @@
 import xml.etree.ElementTree as xmlET
 import tkinter as tk
 import tkinter.ttk as ttk
-from . import factory, parsers
+from . import parsers, widget
+

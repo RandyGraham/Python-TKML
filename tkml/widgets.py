@@ -3,6 +3,10 @@ from functools import partial
 import datetime
 ttk = tk.ttk
 
+"""
+Based on work by Mario Camilleri
+https://stackoverflow.com/a/52152773
+"""
 class ToggleFrame(ttk.Frame):
     def enable(self, state="!disabled"):
         def cstate(widget):
