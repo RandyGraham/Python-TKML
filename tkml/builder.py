@@ -6,8 +6,9 @@ import datetime
 import uuid
 from math import inf
 
-from .builders import TKMLDriver
+from .builder import TKMLDriver
 from .widgets import ToggleFrame, TKMLTreeView, CreateToolTip
+from .parsers import parse_list, parse_dict
 
 DEBUG = False
 
@@ -28,61 +29,6 @@ class TKMLRuntimeError(Exception):
 
 class TKMLMalformedElement(Exception):
     pass
-
-
-def parse_list(text: str) -> list:
-    """
-    Take a list of comma seperated values and convert it to a list
-
-    values are auto-converted to int if they don't contain letters
-    """
-    stripped_values = (value.strip(" ") for value in text.split(" "))
-    converted_values = [(int(value) if value.isdigit() else value) for value in stripped_values]
-    return converted_values
-
-
-def parse_dict(text: str) -> dict:
-    """
-    Take a list of comma seperated values and convert it to a dict.
-    Ignores extra whitespace
-    Text is formatted like this "key = value; key2 = value2;"
-    """
-    dict_ = {}
-    keybuffer = ""
-    valuebuffer = ""
-    c_buffer = "key"
-    for ch in text:
-        if ch == ";": #We arrived at the end of the value
-            if "," in valuebuffer: #The value is a list
-                dict_[keybuffer] = parse_list(valuebuffer)
-            else:
-                if valuebuffer.isdigit():
-                    dict_[keybuffer] = int(valuebuffer)
-                else:
-                    dict_[keybuffer] = valuebuffer
-
-            keybuffer = ""
-            valuebuffer = ""
-            ignoring_spaces_until_letter = True
-            c_buffer = "key"
-            continue
-
-        if ch == "=":
-            c_buffer = "value"
-            ignoring_spaces_until_letter = True
-            continue
-
-        if ch == " " and ignoring_spaces_until_letter:
-            continue
-
-        #We've reached a significant character
-        ignoring_spaces_until_letter = False
-        if c_buffer == "key":
-            keybuffer += ch
-        elif c_buffer == "value":
-            valuebuffer += ch
-    dprint(f"Parse Dict {text} -> {dict_}")
-    return dict_
 
 
 """
@@ -231,7 +177,13 @@ def get_id(node: xmlET.Element) -> str | None:
     else:
         return None
 
-
+"""
+I'm aware that this is not the best way to do this, and
+it was hacked together as parts were needed.
+The TMKLWidget class is now preferred because it allows you
+to store the xml and instantiate new widgets in a cleaner way,
+but it still uses this big thang
+"""
 class TKMLWidgetBuilder:
     def __init__(self, print_debug=True, parser=None):
         def make_handle_terminal(widget):
@@ -615,3 +567,12 @@ class TKMLWidgetBuilder:
 
     def build_tkml_from_string(self, master: TKMLDriver, xmlstring: str):
         self.build_tkml(master, xmlET.fromstring(xmlstring, self.parser))
+
+class TKMLWidget():
+    def __init__(self, filepath, parser=None):
+        self.filepath = filepath
+        self.xml = xmlET.parse(filepath, parser).getroot()
+        self.builder = TKMLWidgetBuilder()
+
+    def new(self, master):
+        self.builder.build_tkml(master, self.xml)
