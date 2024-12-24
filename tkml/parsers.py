@@ -62,7 +62,7 @@ def parse_dict(text: str) -> dict:
 
 def make_call(master: TKMLDriver, function_name: str) -> callable:
     def _call():
-        func = getattr(master, function_name)
+        func = getattr(master, function_name, None)
         if not callable(func):
             raise TKMLRuntimeError(
                 f"Attempted to call undefined function [{function_name}].\n"
