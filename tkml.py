@@ -818,7 +818,10 @@ class TKMLWidgetBuilder:
         if hasattr(master, "_tkml_init"):
             master._tkml_init()
         if hasattr(master, "init"):
-            master.init()
+            initializer = getattr(master, "init")
+            #If a method has a __getattr__ function it could return AttributeError
+            if type(initializer) != AttributeError:
+                master.init()
 
     def build_tkml_from_file(self, master: TKMLDriver, filepath: str):
         self.build_tkml(master, xmlET.parse(filepath, self.parser).getroot())
