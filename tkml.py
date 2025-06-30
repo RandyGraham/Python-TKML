@@ -816,11 +816,13 @@ class TKMLWidgetBuilder:
             return
         root_widget.pack(**layout_attributes)
         if hasattr(master, "_tkml_init"):
-            master._tkml_init()
+            initializer = getattr(master, "_tkml_init")
+            if type(callable):
+                master._tkml_init()
+
         if hasattr(master, "init"):
             initializer = getattr(master, "init")
-            #If a method has a __getattr__ function it could return AttributeError
-            if type(initializer) != AttributeError:
+            if callable(initializer):
                 master.init()
 
     def build_tkml_from_file(self, master: TKMLDriver, filepath: str):
