@@ -817,7 +817,7 @@ class TKMLWidgetBuilder:
         root_widget.pack(**layout_attributes)
         if hasattr(master, "_tkml_init"):
             initializer = getattr(master, "_tkml_init")
-            if type(callable):
+            if callable(initializer):
                 master._tkml_init()
 
         if hasattr(master, "init"):
